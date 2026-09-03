@@ -1,0 +1,246 @@
+/* The modal. Every value comes from open77-ui.css. */
+
+* { box-sizing: border-box; }
+
+/* No reset stylesheet under this page, only the token file. */
+[hidden] { display: none !important; }
+
+html {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* `opacity` must stay on body alone: `html { opacity: 0 }` composites the whole
+   document into one transparent layer that `body.open` cannot undo. */
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font-family: var(--op77-font-body);
+  color: var(--op77-text);
+  user-select: none;
+  opacity: 0;
+  transition: opacity var(--op77-dur) var(--op77-ease);
+}
+
+body.open { opacity: 1; }
+
+/* The player cannot move while a form is open, so the scene behind it is not something
+   they need to read. Off unless config asked for it. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--op77-scrim);
+  opacity: 0;
+  transition: opacity var(--op77-dur) var(--op77-ease);
+}
+body.dim.open .scrim { opacity: 1; }
+
+.modal {
+  position: fixed;
+  left: 50%;
+  /* Above centre: the lower third of the screen is the platform's own chat band. */
+  top: 42%;
+  width: var(--modal-width, 460px);
+  max-width: calc(100vw - var(--op77-inset-x) * 2);
+  padding: var(--op77-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--op77-space-3);
+  background: var(--op77-panel);
+  border: 1px solid var(--op77-line-hud);
+  /* The house marker: an accent rule down the leading edge. */
+  box-shadow: var(--op77-shadow), var(--op77-rule) 0 0 0 var(--op77-accent) inset;
+  transform: translate(-50%, -50%) translateY(10px);
+  transition: transform var(--op77-dur) var(--op77-ease);
+}
+
+body.open .modal { transform: translate(-50%, -50%); }
+
+.head {
+  display: flex;
+  align-items: baseline;
+  padding-bottom: var(--op77-space-2);
+  border-bottom: 1px solid var(--op77-line);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font: 700 var(--op77-fs-title) / 1.1 var(--op77-font-display);
+  letter-spacing: var(--op77-track-head);
+  text-transform: uppercase;
+  color: var(--op77-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  margin: 0;
+  font: 400 var(--op77-fs-meta) / 1.4 var(--op77-font-body);
+  color: var(--op77-text-dim);
+}
+.note:empty { display: none; }
+
+.fields {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--op77-space-2);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--op77-space-3);
+  padding: var(--op77-space-2);
+  background: var(--op77-panel-quiet);
+  border: 1px solid var(--op77-line);
+  transition:
+    background var(--op77-dur-fast) var(--op77-ease),
+    border-color var(--op77-dur-fast) var(--op77-ease);
+}
+
+.field .label {
+  min-width: 0;
+  font: 700 var(--op77-fs-label) / 1.2 var(--op77-font-mono);
+  letter-spacing: var(--op77-track-label);
+  text-transform: uppercase;
+  color: var(--op77-text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field .cell {
+  display: flex;
+  align-items: center;
+  gap: var(--op77-space-2);
+  min-width: 0;
+}
+
+/* The typed line. It carries the caret, so it is the one element that may be selected. */
+.field .entry {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--op77-line-strong);
+  outline: none;
+  user-select: text;
+  font: 400 var(--op77-fs-body) / 1.3 var(--op77-font-mono);
+  letter-spacing: var(--op77-track-head);
+  color: var(--op77-text);
+  caret-color: var(--op77-accent);
+}
+
+.field .entry::placeholder {
+  color: var(--op77-text-faint);
+  /* The placeholder is a prompt, not an answer: never the same weight as typed text. */
+  font-style: italic;
+}
+
+.field .value {
+  flex: none;
+  min-width: 0;
+  font: 400 var(--op77-fs-body) / 1.3 var(--op77-font-mono);
+  letter-spacing: var(--op77-track-label);
+  color: var(--op77-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field.kind-choice .value { flex: 1 1 auto; }
+
+/* The slider's track, drawn at the value's own proportion. */
+.field .bar {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--op77-rule);
+  background: var(--op77-line-strong);
+}
+
+.field .fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--op77-accent-deep);
+  transition: width var(--op77-dur-fast) var(--op77-ease);
+}
+
+.field .count {
+  flex: none;
+  font: 400 var(--op77-fs-micro) / 1 var(--op77-font-mono);
+  letter-spacing: var(--op77-track-micro);
+  color: var(--op77-text-faint);
+}
+.field .count:empty { display: none; }
+
+/* The affordance column: `< >` means LEFT and RIGHT change the value beside it. */
+.field .mark {
+  flex: none;
+  margin-left: auto;
+  font: 700 var(--op77-fs-meta) / 1 var(--op77-font-mono);
+  color: var(--op77-text-faint);
+}
+.field .mark:empty { display: none; }
+
+/* The focused field: colour and fill at once, read at arm's length. */
+.field.on {
+  background: var(--op77-panel-raised);
+  border-color: var(--op77-accent-line);
+}
+.field.on .label { color: var(--op77-accent); }
+.field.on .entry { border-bottom-color: var(--op77-accent); }
+.field.on .mark { color: var(--op77-accent); }
+.field.on .fill { background: var(--op77-accent); }
+
+.hint {
+  margin: 0;
+  font: 400 var(--op77-fs-meta) / 1.4 var(--op77-font-body);
+  color: var(--op77-text-dim);
+}
+.hint:empty { display: none; }
+
+.status {
+  margin: 0;
+  font: 400 var(--op77-fs-meta) / 1.4 var(--op77-font-mono);
+  color: var(--op77-ok);
+}
+.status.bad { color: var(--op77-danger); }
+.status:empty { display: none; }
+
+.keys {
+  margin: 0;
+  padding-top: var(--op77-space-2);
+  border-top: 1px solid var(--op77-line);
+  font: 700 var(--op77-fs-micro) / 1.4 var(--op77-font-mono);
+  letter-spacing: var(--op77-track-micro);
+  text-transform: uppercase;
+  color: var(--op77-text-faint);
+}
+.keys:empty { display: none; }
+
+/* The fields deal themselves in when a form opens. One-shot; `--slot` is set per row by
+   the page, and open77-ui.css collapses this to 1ms under reduced motion. */
+@keyframes field-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+body.open .field {
+  animation: field-in var(--op77-dur) var(--op77-ease) backwards;
+  animation-delay: calc(var(--slot, 0) * 30ms + 40ms);
+}

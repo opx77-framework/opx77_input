@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OPX77 Input</title>
+<!-- open77-ui.css is mirrored byte-for-byte across resources: edit input.css instead. -->
+<link rel="stylesheet" href="open77-ui.css">
+<link rel="stylesheet" href="input.css">
+</head>
+<body>
+
+<!-- The scrim, drawn only while a form is open and only when config asks for it. -->
+<div class="scrim" id="scrim"></div>
+
+<!-- The modal. This surface holds the keyboard for exactly as long as Lua says so. -->
+<div class="modal" id="modal">
+
+  <header class="head">
+    <span class="title" id="title">INPUT</span>
+  </header>
+
+  <!-- The form's own description. -->
+  <p class="note" id="note"></p>
+
+  <!-- One row per field. -->
+  <ul class="fields" id="fields"></ul>
+
+  <!-- The focused field's description. -->
+  <p class="hint" id="hint"></p>
+
+  <!-- Lua's transient line: a refusal, or the caller's own. -->
+  <p class="status" id="status"></p>
+
+  <!-- The key line, rendered by Lua in the player's language. -->
+  <p class="keys" id="keys"></p>
+
+</div>
+
+<script src="input.js"></script>
+</body>
+</html>
