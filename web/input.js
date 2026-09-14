@@ -1,4 +1,4 @@
-/* opx77_input -- the modal's page: a renderer, driven entirely by Lua. */
+/* opx77_input -- the form's page: a renderer, driven entirely by Lua. */
 (function () {
   "use strict";
 
@@ -53,7 +53,7 @@
 
   var elements = {
     scrim: document.getElementById("scrim"),
-    modal: document.getElementById("modal"),
+    strip: document.getElementById("strip"),
     title: document.getElementById("title"),
     note: document.getElementById("note"),
     fields: document.getElementById("fields"),
@@ -72,6 +72,14 @@
     Escape: "escape"
   };
 
+  // The same four anchors as opx77_menu, so a form can sit where the list before it sat.
+  var ANCHORS = {
+    "top-left": "anchor-top-left",
+    "top-right": "anchor-top-right",
+    "left": "anchor-left",
+    "right": "anchor-right"
+  };
+
   // Whether the focused row's own frame said LEFT and RIGHT change its value. When it did
   // not, those two keys belong to the caret.
   var focusedSpins = false;
@@ -79,9 +87,12 @@
   function applyConfig(payload) {
     payload = payload || {};
 
+    var anchor = ANCHORS[text(payload.anchor)] || ANCHORS["top-left"];
+    elements.strip.className = "strip " + anchor;
+
     var width = Number(payload.width);
     if (isFinite(width) && width > 0) {
-      elements.modal.style.setProperty("--modal-width", Math.round(width) + "px");
+      elements.strip.style.setProperty("--strip-width", Math.round(width) + "px");
     }
     document.body.classList.toggle("dim", payload.dim === true);
   }
@@ -102,7 +113,7 @@
 
     entry = {
       id: "",
-      node: make("li", "field"),
+      node: make("li", "row"),
       label: make("span", "label"),
       cell: make("span", "cell"),
       input: make("input", "entry"),
@@ -110,7 +121,7 @@
       bar: make("span", "bar"),
       fill: make("i", "fill"),
       count: make("span", "count"),
-      mark: make("span", "mark")
+      mark: make("span", "mark-col")
     };
     entry.input.type = "text";
     entry.input.spellcheck = false;
@@ -142,7 +153,7 @@
     entry.id = text(row.id);
     entry.label.textContent = text(row.label);
 
-    var classes = "field";
+    var classes = "row";
     if (row.on) classes += " on";
     classes += " kind-" + (typed ? "text" : (kind === "slider" ? "slider" : "choice"));
     entry.node.className = classes;
@@ -155,6 +166,9 @@
       // Assigned only when it differs: a same-value write moves the caret to the end.
       if (entry.input.value !== buffer) entry.input.value = buffer;
       entry.input.placeholder = text(row.placeholder);
+      // The plate is as wide as the line it holds, placeholder included, plus the caret.
+      entry.input.style.setProperty("--chars",
+        Math.max(characters(buffer), characters(entry.input.placeholder)) + 1);
       var max = Number(row.max);
       entry.count.textContent = isFinite(max) && max > 0
         ? characters(buffer) + "/" + Math.round(max) : "";
@@ -195,7 +209,7 @@
     // Slots past the end of a shorter form. The class is reset too, or a hidden slot
     // that kept `on` would come back focused under a longer one.
     for (var spare = rows.length; spare < slots.length; spare += 1) {
-      slots[spare].node.className = "field";
+      slots[spare].node.className = "row";
       slots[spare].node.hidden = true;
     }
 
@@ -224,7 +238,7 @@
     // Blanked on hide, not on the next open: a frame arriving during the fade-out would
     // show the previous form's fields.
     for (var index = 0; index < slots.length; index += 1) {
-      slots[index].node.className = "field";
+      slots[index].node.className = "row";
       slots[index].node.hidden = true;
       slots[index].input.value = "";
     }

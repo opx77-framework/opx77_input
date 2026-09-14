@@ -1,4 +1,18 @@
-/* The modal. Every value comes from open77-ui.css. */
+/* The form, drawn as opx77_menu's strip so that a list and the form it leads to read as one
+   surface. Every rule below that has a counterpart in opx77_menu/web/menu.css carries the
+   same values: change one, change both. Every value comes from open77-ui.css. */
+
+/* Night City yellow, as an accent-role override; --op77-ink is the text on this fill.
+   The same block as opx77_menu's. */
+:root {
+  --op77-accent:      #fcee0a;
+  --op77-accent-ice:  #fff761;
+  --op77-accent-deep: #d4c500;
+  --op77-accent-soft: rgba(252, 238, 10, 0.13);
+  --op77-accent-line: rgba(252, 238, 10, 0.45);
+  --op77-ink:         #0a0a05;
+  --op77-glow: 0 0 24px rgba(252, 238, 10, 0.22);
+}
 
 * { box-sizing: border-box; }
 
@@ -28,8 +42,7 @@ body {
 
 body.open { opacity: 1; }
 
-/* The player cannot move while a form is open, so the scene behind it is not something
-   they need to read. Off unless config asked for it. */
+/* Off unless config asks for it: opx77_menu draws none, and the form sits where it does. */
 .scrim {
   position: fixed;
   inset: 0;
@@ -39,208 +52,373 @@ body.open { opacity: 1; }
 }
 body.dim.open .scrim { opacity: 1; }
 
-.modal {
+.strip {
   position: fixed;
-  left: 50%;
-  /* Above centre: the lower third of the screen is the platform's own chat band. */
-  top: 42%;
-  width: var(--modal-width, 460px);
+
+  /* Diagonal travel across a plate, and how far the focused one leaves the column.
+     Both are flipped by the anchor rules. */
+  --cut: 20px;
+  --pop: 18px;
+
+  /* A filter, not a box-shadow: `clip-path` would cut a box-shadow off with the box. */
+  --plate-shadow: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.55));
+
+  width: var(--strip-width, 340px);
   max-width: calc(100vw - var(--op77-inset-x) * 2);
-  padding: var(--op77-space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--op77-space-3);
-  background: var(--op77-panel);
-  border: 1px solid var(--op77-line-hud);
-  /* The house marker: an accent rule down the leading edge. */
-  box-shadow: var(--op77-shadow), var(--op77-rule) 0 0 0 var(--op77-accent) inset;
-  transform: translate(-50%, -50%) translateY(10px);
+  /* The gap is what makes these separate plates rather than a bordered box. */
+  gap: var(--op77-space-1);
+  background: none;
+  border: 0;
+  /* `visible`: the focused plate slides out of this box. */
+  overflow: visible;
+  /* Pins the stacking context: each plate is a `z-index: -1` pseudo-element. */
+  isolation: isolate;
+  transform: translateX(var(--slide, 10px));
   transition: transform var(--op77-dur) var(--op77-ease);
 }
 
-body.open .modal { transform: translate(-50%, -50%); }
+body.open .strip { transform: none; }
 
-.head {
-  display: flex;
-  align-items: baseline;
-  padding-bottom: var(--op77-space-2);
-  border-bottom: 1px solid var(--op77-line);
+/* Each anchor sets the edge, the slide-in direction, the focus pop, and the side of a
+   plate that carries the diagonal. */
+.strip.anchor-top-left,
+.strip.anchor-left {
+  left: var(--op77-inset-x);
+  align-items: flex-start;
+  --slide: -10px;
+  --pop: 18px;
+  --plate: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
 }
 
-.title {
-  flex: 1;
-  min-width: 0;
-  font: 700 var(--op77-fs-title) / 1.1 var(--op77-font-display);
-  letter-spacing: var(--op77-track-head);
-  text-transform: uppercase;
-  color: var(--op77-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.strip.anchor-top-right,
+.strip.anchor-right {
+  right: var(--op77-inset-x);
+  align-items: flex-end;
+  --slide: 10px;
+  --pop: -18px;
+  --plate: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%);
 }
 
-.note {
-  margin: 0;
-  font: 400 var(--op77-fs-meta) / 1.4 var(--op77-font-body);
-  color: var(--op77-text-dim);
-}
-.note:empty { display: none; }
+.strip.anchor-top-left,
+.strip.anchor-top-right { top: var(--op77-inset-y); }
 
-.fields {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--op77-space-2);
+/* The mid band: below the minimap (ends 30%) and above the control hints (start 66%). */
+.strip.anchor-left,
+.strip.anchor-right { top: 33vh; }
+
+/* The shared plate: upright text over a cut shape, only as wide as its own text. */
+.head,
+.note,
+.row,
+.hint,
+.status,
+.keys {
+  position: relative;
+  width: auto;
+  min-width: 58%;
+  max-width: 100%;
+  flex: none;
+  background: none;
+  border: 0;
 }
 
-.field {
-  display: grid;
-  grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--op77-space-3);
-  padding: var(--op77-space-2);
-  background: var(--op77-panel-quiet);
-  border: 1px solid var(--op77-line);
+.head::before,
+.note::before,
+.row::before,
+.hint::before,
+.status::before,
+.keys::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  clip-path: var(--plate);
+  background: var(--op77-panel);
+  border: 1px solid var(--op77-line-hud);
   transition:
     background var(--op77-dur-fast) var(--op77-ease),
     border-color var(--op77-dur-fast) var(--op77-ease);
 }
 
-.field .label {
+/* The menu's rail gutter. A form never pages, but its rows start where a list's do. */
+.strip.anchor-top-left .list, .strip.anchor-left .list { padding-left: var(--op77-space-3); }
+.strip.anchor-top-right .list, .strip.anchor-right .list { padding-right: var(--op77-space-3); }
+
+/* Room for the diagonal: text landing in the wedge reads as clipped. */
+.strip.anchor-top-left .head, .strip.anchor-left .head,
+.strip.anchor-top-left .note, .strip.anchor-left .note,
+.strip.anchor-top-left .row,  .strip.anchor-left .row,
+.strip.anchor-top-left .hint, .strip.anchor-left .hint,
+.strip.anchor-top-left .status, .strip.anchor-left .status,
+.strip.anchor-top-left .keys, .strip.anchor-left .keys {
+  padding-right: calc(var(--op77-space-3) + var(--cut));
+}
+.strip.anchor-top-right .head, .strip.anchor-right .head,
+.strip.anchor-top-right .note, .strip.anchor-right .note,
+.strip.anchor-top-right .row,  .strip.anchor-right .row,
+.strip.anchor-top-right .hint, .strip.anchor-right .hint,
+.strip.anchor-top-right .status, .strip.anchor-right .status,
+.strip.anchor-top-right .keys, .strip.anchor-right .keys {
+  padding-left: calc(var(--op77-space-3) + var(--cut));
+}
+
+/* The title plate carries the house marker: an accent rule down the leading edge. */
+.head {
+  display: flex;
+  align-items: baseline;
+  padding: var(--op77-space-2) var(--op77-space-3);
+  min-width: 72%;
+}
+.head::before {
+  box-shadow: var(--op77-rule) 0 0 0 var(--op77-accent) inset;
+  filter: var(--plate-shadow);
+}
+.strip.anchor-top-right .head::before,
+.strip.anchor-right .head::before {
+  box-shadow: calc(var(--op77-rule) * -1) 0 0 0 var(--op77-accent) inset;
+}
+
+.title {
+  flex: 1;
   min-width: 0;
-  font: 700 var(--op77-fs-label) / 1.2 var(--op77-font-mono);
-  letter-spacing: var(--op77-track-label);
+  font: 700 var(--op77-fs-lead) / 1.1 var(--op77-font-display);
+  letter-spacing: var(--op77-track-head);
   text-transform: uppercase;
-  color: var(--op77-text-faint);
+  color: var(--op77-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.field .cell {
-  display: flex;
-  align-items: center;
-  gap: var(--op77-space-2);
-  min-width: 0;
-}
-
-/* The typed line. It carries the caret, so it is the one element that may be selected. */
-.field .entry {
-  flex: 1 1 auto;
-  min-width: 0;
+/* The form's description is a sentence, so it takes the menu's description plate. */
+.note {
   margin: 0;
-  padding: 2px 0;
+  padding: var(--op77-space-2) var(--op77-space-3);
+  font: 400 var(--op77-fs-meta) / 1.4 var(--op77-font-body);
+  color: var(--op77-text-dim);
+  white-space: normal;
+}
+.note:empty { display: none; }
+
+.list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  gap: var(--op77-space-1);
   background: none;
   border: 0;
-  border-bottom: 1px solid var(--op77-line-strong);
-  outline: none;
-  user-select: text;
-  font: 400 var(--op77-fs-body) / 1.3 var(--op77-font-mono);
-  letter-spacing: var(--op77-track-head);
-  color: var(--op77-text);
-  caret-color: var(--op77-accent);
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: visible;
 }
 
-.field .entry::placeholder {
-  color: var(--op77-text-faint);
-  /* The placeholder is a prompt, not an answer: never the same weight as typed text. */
-  font-style: italic;
+/* A field is a menu row: label on the leading side, its value on the trailing one. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--op77-space-3);
+  padding: 4px var(--op77-space-3);
+  color: var(--op77-text-dim);
+  white-space: nowrap;
+  transition: transform var(--op77-dur-fast) var(--op77-ease);
 }
 
-.field .value {
-  flex: none;
+/* The condensed display face: a few more characters before the ellipsis. */
+.row .label {
+  flex: 0 1 auto;
   min-width: 0;
-  font: 400 var(--op77-fs-body) / 1.3 var(--op77-font-mono);
+  font: 600 var(--op77-fs-lead) / 1.25 var(--op77-font-display);
+  letter-spacing: var(--op77-track-head);
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Everything right of the label: the typed line or the value, then the mark. A zero basis,
+   so it gets only the room the label leaves: a long typed line scrolls under its caret,
+   while a cut label no longer says which field this is. */
+.row .cell {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--op77-space-3);
+}
+
+.row .value {
+  flex: 0 1 auto;
+  min-width: 0;
+  font: 400 var(--op77-fs-meta) / 1 var(--op77-font-mono);
   letter-spacing: var(--op77-track-label);
-  color: var(--op77-text);
+  color: var(--op77-text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.field.kind-choice .value { flex: 1 1 auto; }
-
-/* The slider's track, drawn at the value's own proportion. */
-.field .bar {
-  flex: 1 1 auto;
+/* The typed line, in the value's own face. `--chars` is set by the page, so the plate is
+   as wide as what it holds, like every other plate; one more for the caret. It carries
+   the caret, so it is the one element that may be selected. */
+.row .entry {
+  flex: 0 1 auto;
   min-width: 0;
-  height: var(--op77-rule);
+  width: calc(var(--chars, 1) * (1ch + var(--op77-track-label)) + 2px);
+  max-width: 100%;
+  margin: 0;
+  padding: 0 0 2px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  user-select: text;
+  font: 400 var(--op77-fs-meta) / 1 var(--op77-font-mono);
+  letter-spacing: var(--op77-track-label);
+  color: var(--op77-text-faint);
+  caret-color: var(--op77-ink);
+}
+
+.row .entry::placeholder {
+  color: var(--op77-text-faint);
+  /* The placeholder is a prompt, not an answer: never the same face as typed text. */
+  font-style: italic;
+  opacity: 1;
+}
+
+/* The slider's track, drawn at the value's own proportion. Short: the number beside it
+   is the reading, the track only says where in the range it sits. */
+.row .bar {
+  /* Ahead of the number, so the number stays against the mark as a menu value does. */
+  order: -1;
+  flex: none;
+  width: 48px;
+  height: 2px;
   background: var(--op77-line-strong);
 }
 
-.field .fill {
+.row .fill {
   display: block;
   height: 100%;
   width: 0;
-  background: var(--op77-accent-deep);
+  background: var(--op77-text-faint);
   transition: width var(--op77-dur-fast) var(--op77-ease);
 }
 
-.field .count {
+/* The character count, on the focused field only: it is about what is being typed. */
+.row .count {
   flex: none;
   font: 400 var(--op77-fs-micro) / 1 var(--op77-font-mono);
   letter-spacing: var(--op77-track-micro);
   color: var(--op77-text-faint);
 }
-.field .count:empty { display: none; }
+.row .count:empty,
+.row:not(.on) .count { display: none; }
 
 /* The affordance column: `< >` means LEFT and RIGHT change the value beside it. */
-.field .mark {
+.row .mark-col {
   flex: none;
-  margin-left: auto;
-  font: 700 var(--op77-fs-meta) / 1 var(--op77-font-mono);
+  text-align: right;
   color: var(--op77-text-faint);
+  font: 700 var(--op77-fs-meta) / 1 var(--op77-font-mono);
 }
-.field .mark:empty { display: none; }
+.row .mark-col:empty { display: none; }
 
-/* The focused field: colour and fill at once, read at arm's length. */
-.field.on {
-  background: var(--op77-panel-raised);
-  border-color: var(--op77-accent-line);
+/* The focused field: position, colour and fill at once, as the menu's cursor row. */
+.row.on {
+  transform: translateX(var(--pop));
+  color: var(--op77-ink);
 }
-.field.on .label { color: var(--op77-accent); }
-.field.on .entry { border-bottom-color: var(--op77-accent); }
-.field.on .mark { color: var(--op77-accent); }
-.field.on .fill { background: var(--op77-accent); }
+.row.on::before {
+  background: var(--op77-accent);
+  border-color: var(--op77-accent-ice);
+  filter: var(--plate-shadow);
+}
+.row.on .label { font-weight: 700; }
+.row.on .value,
+.row.on .count { color: var(--op77-ink); opacity: 0.72; }
+.row.on .mark-col { color: var(--op77-ink); }
+
+/* On the focused text field the line is being written, so it is full ink and underlined. */
+.row.on .entry {
+  color: var(--op77-ink);
+  border-bottom-color: rgba(10, 10, 5, 0.45);
+}
+.row.on .entry::placeholder { color: rgba(10, 10, 5, 0.5); }
+
+.row.on .bar { background: rgba(10, 10, 5, 0.25); }
+.row.on .fill { background: var(--op77-ink); }
 
 .hint {
   margin: 0;
+  padding: var(--op77-space-2) var(--op77-space-3);
   font: 400 var(--op77-fs-meta) / 1.4 var(--op77-font-body);
   color: var(--op77-text-dim);
+  /* A description is a sentence. */
+  white-space: normal;
 }
 .hint:empty { display: none; }
 
 .status {
   margin: 0;
+  padding: var(--op77-space-2) var(--op77-space-3);
   font: 400 var(--op77-fs-meta) / 1.4 var(--op77-font-mono);
   color: var(--op77-ok);
+  white-space: normal;
 }
 .status.bad { color: var(--op77-danger); }
 .status:empty { display: none; }
 
+/* The key line: the menu's breadcrumb voice, allowed to wrap. */
 .keys {
   margin: 0;
-  padding-top: var(--op77-space-2);
-  border-top: 1px solid var(--op77-line);
-  font: 700 var(--op77-fs-micro) / 1.4 var(--op77-font-mono);
+  padding: var(--op77-space-1) var(--op77-space-3);
+  font: 400 var(--op77-fs-micro) / 1.4 var(--op77-font-mono);
   letter-spacing: var(--op77-track-micro);
   text-transform: uppercase;
   color: var(--op77-text-faint);
+  white-space: normal;
 }
 .keys:empty { display: none; }
 
-/* The fields deal themselves in when a form opens. One-shot; `--slot` is set per row by
+/* The plates deal themselves in when a form opens. One-shot; `--slot` is set per row by
    the page, and open77-ui.css collapses this to 1ms under reduced motion. */
-@keyframes field-in {
+@keyframes plate-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateX(calc(var(--pop) * -1.2));
   }
 }
 
-body.open .field {
-  animation: field-in var(--op77-dur) var(--op77-ease) backwards;
+body.open .head,
+body.open .note,
+body.open .hint,
+body.open .status,
+body.open .keys {
+  animation: plate-in var(--op77-dur) var(--op77-ease) backwards;
+}
+
+body.open .row {
+  animation: plate-in var(--op77-dur) var(--op77-ease) backwards;
   animation-delay: calc(var(--slot, 0) * 30ms + 40ms);
+}
+
+/* The scanline, on the two plates that carry it well. Static, not animated. */
+.head::before,
+.row.on::before {
+  border-color: var(--op77-accent-line);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.14) 0,
+    rgba(0, 0, 0, 0.14) 1px,
+    transparent 1px,
+    transparent 3px
+  );
 }
