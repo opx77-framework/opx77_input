@@ -71,6 +71,7 @@ end
 --- Send the layout to the page. Once, at ready: none of it changes while the resource runs.
 local function sendConfig()
   send("input:config", {
+    anchor = Config.ANCHOR,
     width = Config.WIDTH,
     dim = Config.DIM == true,
   })

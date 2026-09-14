@@ -13,8 +13,9 @@
 <!-- The scrim, drawn only while a form is open and only when config asks for it. -->
 <div class="scrim" id="scrim"></div>
 
-<!-- The modal. This surface holds the keyboard for exactly as long as Lua says so. -->
-<div class="modal" id="modal">
+<!-- The form, drawn as opx77_menu's strip. This surface holds the keyboard for exactly as
+     long as Lua says so. -->
+<div class="strip anchor-top-left" id="strip">
 
   <header class="head">
     <span class="title" id="title">INPUT</span>
@@ -23,8 +24,8 @@
   <!-- The form's own description. -->
   <p class="note" id="note"></p>
 
-  <!-- One row per field. -->
-  <ul class="fields" id="fields"></ul>
+  <!-- One row per field, with the menu's rail gutter down the leading edge. -->
+  <ul class="list" id="fields"></ul>
 
   <!-- The focused field's description. -->
   <p class="hint" id="hint"></p>
