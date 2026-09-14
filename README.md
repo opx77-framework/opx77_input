@@ -22,7 +22,7 @@ A value-asking service for **Opx77**. One resource owns the modal; every other r
 
 ## Look and keys
 
-The form is drawn exactly as `opx77_menu` draws a menu, and its stylesheet carries the menu's values: the same anchor and width, a title plate with the yellow rule, and one cut plate per field — label on the left, value on the right, `‹›` beside a value that LEFT and RIGHT change. The focused field is the menu's cursor row: it slides out of the column in yellow. A text field's typed line sits where a menu row's value does, and grows with what it holds. The form's description, the focused field's description, the status line (red on a refusal) and the key line each follow as their own plate underneath.
+The form is drawn exactly as `opx77_menu` draws a menu, and its stylesheet carries the menu's values: the same width, a title plate with the yellow rule, and one cut plate per field — label on the left, value on the right, `‹›` beside a value that LEFT and RIGHT change. The focused field is the menu's cursor row: it slides out of the column in yellow. A text field's typed line sits where a menu row's value does, and grows with what it holds. The form's description, the focused field's description, the status line (red on a refusal) and the key line each follow as their own plate underneath.
 
 The arrows and ENTER mean what they mean in the menu: UP and DOWN move between fields, LEFT and RIGHT change a choice or a slider (on a text field they move the caret), ENTER submits. ESCAPE cancels. BACKSPACE, the menu's way back, belongs to the text fields here.
 
@@ -118,7 +118,7 @@ A slider answers a number, and it is a float even where it renders whole: `40` c
 
 ## Configuration
 
-`config.lua`. Language, anchor, strip width, and whether the scene behind it is dimmed. `ANCHOR` and `WIDTH` take the same values as `opx77_menu`'s and ship with the same defaults; keep the two resources on the same ones. `DIM` ships off, because the menu draws no scrim.
+`config.lua`. Language, anchor, strip width, and whether the scene behind it is dimmed. `ANCHOR` ships `"center"`: the form is drawn in the menu's style, but it is a question the player has to answer, so it sits in the middle of the screen rather than where a menu does. It also takes `opx77_menu`'s four anchors (`"top-left"`, `"top-right"`, `"left"`, `"right"`) for a server that wants the form where the list before it sat. `WIDTH` takes the same value as the menu's and ships with the same default. `DIM` ships off, because the menu draws no scrim.
 
 ## Locales
 

@@ -83,6 +83,7 @@ body.open .strip { transform: none; }
 
 /* Each anchor sets the edge, the slide-in direction, the focus pop, and the side of a
    plate that carries the diagonal. */
+.strip.anchor-center,
 .strip.anchor-top-left,
 .strip.anchor-left {
   left: var(--op77-inset-x);
@@ -107,6 +108,15 @@ body.open .strip { transform: none; }
 /* The mid band: below the minimap (ends 30%) and above the control hints (start 66%). */
 .strip.anchor-left,
 .strip.anchor-right { top: 33vh; }
+
+/* The middle of the screen, plates cut and gutted as on the left anchor. The centring rides
+   on the transform, so the slide-in is rebuilt around it rather than replaced by it. */
+.strip.anchor-center {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) translateY(10px);
+}
+body.open .strip.anchor-center { transform: translate(-50%, -50%); }
 
 /* The shared plate: upright text over a cut shape, only as wide as its own text. */
 .head,
@@ -143,10 +153,13 @@ body.open .strip { transform: none; }
 }
 
 /* The menu's rail gutter. A form never pages, but its rows start where a list's do. */
+.strip.anchor-center .list,
 .strip.anchor-top-left .list, .strip.anchor-left .list { padding-left: var(--op77-space-3); }
 .strip.anchor-top-right .list, .strip.anchor-right .list { padding-right: var(--op77-space-3); }
 
 /* Room for the diagonal: text landing in the wedge reads as clipped. */
+.strip.anchor-center .head, .strip.anchor-center .note, .strip.anchor-center .row,
+.strip.anchor-center .hint, .strip.anchor-center .status, .strip.anchor-center .keys,
 .strip.anchor-top-left .head, .strip.anchor-left .head,
 .strip.anchor-top-left .note, .strip.anchor-left .note,
 .strip.anchor-top-left .row,  .strip.anchor-left .row,
