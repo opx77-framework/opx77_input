@@ -55,21 +55,6 @@ function OpxInput.Model.Edit(entry, text) end
 ---@return string|nil refusal
 function OpxInput.Model.Check(record) end
 
---- The machine-readable value of one field: an option's value, a slider's float, or the text.
----@param entry InputEntry
----@return string|number
-function OpxInput.Model.Raw(entry) end
-
---- The rendered value of one field: an option's label, or a slider's number and suffix.
----@param entry InputEntry
----@return string
-function OpxInput.Model.Value(entry) end
-
---- Every answer, keyed by field id.
----@param record InputRecord
----@return table<string, string|number>
-function OpxInput.Model.Values(record) end
-
 --- Everything the page needs for one frame, including the translated key line.
 ---@param record InputRecord
 ---@return InputView

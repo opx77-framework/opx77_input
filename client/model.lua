@@ -568,11 +568,11 @@ function OpxInput.Model.Check(record)
 end
 
 --- @author DemiAutomatic
---- @method OpxInput.Model.Raw
+--- @method rawValue
 --- @description The machine-readable value one field answers with.
 --- @param entry {InputEntry}
 --- @returns {string|number}
-function OpxInput.Model.Raw(entry)
+local function rawValue(entry)
 	local kind = entry.kind
 	if kind == 'choice' then return entry.options[entry.selected].value end
 	if kind == 'slider' then return entry.slider.value end
@@ -580,11 +580,11 @@ function OpxInput.Model.Raw(entry)
 end
 
 --- @author DemiAutomatic
---- @method OpxInput.Model.Value
+--- @method renderedValue
 --- @description The rendered value of one field, for the page.
 --- @param entry {InputEntry}
 --- @returns {string}
-function OpxInput.Model.Value(entry)
+local function renderedValue(entry)
 	local kind = entry.kind
 	if kind == 'choice' then return entry.options[entry.selected].label end
 	if kind == 'slider' then
@@ -598,15 +598,15 @@ function OpxInput.Model.Value(entry)
 end
 
 --- @author DemiAutomatic
---- @method OpxInput.Model.Values
+--- @method answers
 --- @description Every field's answer, keyed by field id.
 --- @param record {InputRecord}
 --- @returns {table<string, string|number>}
-function OpxInput.Model.Values(record)
+local function answers(record)
 	local values = {}
 	for index = 1, #record.fields do
 		local entry = record.fields[index]
-		values[entry.id] = Model.Raw(entry)
+		values[entry.id] = rawValue(entry)
 	end
 	return values
 end
@@ -649,7 +649,7 @@ function OpxInput.Model.View(record)
 			row.placeholder = entry.placeholder
 			row.max = entry.maxLength
 		else
-			row.value = Model.Value(entry)
+			row.value = renderedValue(entry)
 		end
 		if kind == 'slider' then
 			local slider = entry.slider
@@ -683,6 +683,6 @@ function OpxInput.Model.Payload(record, action)
 		owner = record.owner,
 		action = action,
 		data = record.data,
-		values = action == 'submit' and Model.Values(record) or nil,
+		values = action == 'submit' and answers(record) or nil,
 	}
 end

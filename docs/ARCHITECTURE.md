@@ -146,7 +146,7 @@ tampons candidats (`input:edit`), elle ne décide de rien.
 - `OpxInput.Model.Adjust` : un choix boucle ; un curseur est **borné, pas bouclé** (un volume
   qui saute de 0 à 100 est une plainte), puis recalé sur sa grille de pas, parce que 0.1 ajouté
   dix fois ne fait pas 1.0.
-- `OpxInput.Model.Value` écrit une valeur entière sans décimale : « VOLUME 70.0% » se lit comme
+- `renderedValue` (`client/model.lua`) écrit une valeur entière sans décimale : « VOLUME 70.0% » se lit comme
   un bug. La réponse, elle, reste un flottant.
 - `OpxInput.Model.View` : un drapeau absent vaut `nil`, pas `false`, pour ne pas coûter de nœud
   dans le payload ; seul le drapeau d'échec du statut traverse (`statusBad`), parce que
