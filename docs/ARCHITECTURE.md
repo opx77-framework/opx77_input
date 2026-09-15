@@ -35,7 +35,8 @@ L'ordre de chargement est l'ordre du manifeste, et il porte :
   surface tient déjà le clavier, puisqu'il s'apprête à le prendre.
 
 La resource ne déclare pas de `dependency` et n'en a pas besoin : rien ne doit tourner pour
-qu'elle démarre.
+qu'elle démarre. La directive `version` n'est recopiée dans aucun fichier Lua : un code qui en
+aurait besoin la lirait avec `Open77.resource.version()`.
 
 ## Contrats
 
@@ -256,8 +257,6 @@ possède (la ligne de touches, les quatre refus) sont traduites.
 
 ## Limites connues
 
-- `OpxInput.VERSION` n'est lu par personne, et `Open77.resource.version()` lit déjà la directive
-  `version` du manifeste.
 - `unavailable()` (`client/exports.lua`) teste la présence de `Runtime.Unavailable`, qui est
   toujours définie ; `OpxInput.Model.Build` revérifie le nom du propriétaire et le type de la spec
   que les exports ont déjà vérifiés.

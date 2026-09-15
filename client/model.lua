@@ -4,11 +4,6 @@
 
 OpxInput = OpxInput or {}
 
---- @author DemiAutomatic
---- @type {string}
---- @description Mirror of the manifest version, which Lua cannot read.
-OpxInput.VERSION = '0.1.0'
-
 local Text = OpxInput.Text
 
 OpxInput.Model = {}

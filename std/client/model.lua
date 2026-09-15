@@ -1,9 +1,5 @@
 ---@meta
 
---- Mirrors `version` in open77.lua, which no Lua code can read.
----@type string
-OpxInput.VERSION = ''
-
 OpxInput.Model = {}
 
 --- The status line's text, or nil for a value the line refuses (not text, or longer than
