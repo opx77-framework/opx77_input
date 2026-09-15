@@ -262,8 +262,6 @@ possède (la ligne de touches, les quatre refus) sont traduites.
 
 ## Limites connues
 
-- Un `open` avec `status` envoie deux fois la même frame : `OpxInput.Runtime.SetStatus` dessine,
-  puis `OpxInput.Runtime.Open` dessine encore.
 - `pattern` est documenté comme devant correspondre à la réponse **entière**, mais
   `matchesPattern` appelle `string.match` sans ancre : un motif non ancré (`%d+`) accepte
   `a1b`. Tous les appelants actuels ancrent leurs motifs.

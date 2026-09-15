@@ -165,6 +165,23 @@ function OpxInput.Runtime.Close(handle, reason)
 end
 
 --- @author DemiAutomatic
+--- @method writeStatus
+--- @description Stores or clears the open form's status line without drawing.
+--- @param text {string|nil}
+--- @param ok {boolean|nil} False marks a failure.
+--- @returns {boolean}
+local function writeStatus(text, ok)
+	local clean = text ~= nil and Model.StatusText(text) or nil
+	if clean == nil or clean == '' then
+		if record.status == nil then return false end
+		record.status = nil
+	else
+		record.status = { text = clean, ok = ok ~= false, atMs = nowMs() }
+	end
+	return true
+end
+
+--- @author DemiAutomatic
 --- @method OpxInput.Runtime.SetStatus
 --- @description Writes or clears the transient line under the fields.
 --- @param text {string|nil}
@@ -172,14 +189,7 @@ end
 --- @returns {boolean}
 function OpxInput.Runtime.SetStatus(text, ok)
 	if record == nil then return false end
-	local clean = text ~= nil and Model.StatusText(text) or nil
-	if clean == nil or clean == '' then
-		if record.status == nil then return true end
-		record.status = nil
-	else
-		record.status = { text = clean, ok = ok ~= false, atMs = nowMs() }
-	end
-	draw()
+	if writeStatus(text, ok) then draw() end
 	return true
 end
 
@@ -235,7 +245,7 @@ function OpxInput.Runtime.Open(owner, generation, spec)
 	end
 	if note ~= nil then Open77.log.warn('keyboard focus answered ' .. note) end
 
-	if spec.status ~= nil then Runtime.SetStatus(spec.status) end
+	if spec.status ~= nil then writeStatus(spec.status) end
 	draw()
 	return record
 end
