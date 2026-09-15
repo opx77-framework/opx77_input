@@ -212,8 +212,10 @@ appel hôte — puis :
 
 - `expireStatus` efface la ligne de statut après six secondes (`STATUS_MS`) ;
 - `sweep` revérifie le propriétaire au plus une fois par seconde (`OWNER_SWEEP_MS`) : une
-  resource qui n'est plus `running`, ou dont la génération a changé, voit son formulaire annulé
-  (`owner_stopped`).
+  resource qui n'est ni `running` ni `starting`, ou dont la génération a changé, voit son
+  formulaire annulé (`owner_stopped`). `starting` compte comme vivant : une resource qui ouvre un
+  formulaire depuis son propre handler de démarrage répond encore `starting` à
+  `GetResourceState`, et le perdrait au premier balayage.
 
 Chaque appel d'une passe est un appel hôte : la boucle exécute `frameTick` sous `pcall`, parce
 qu'une levée terminerait sinon la boucle pour toute la session, et ne journalise que le premier

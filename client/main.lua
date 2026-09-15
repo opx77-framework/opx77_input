@@ -349,7 +349,8 @@ local function sweep(atMs)
 	if atMs < nextOwnerSweepMs then return end
 	nextOwnerSweepMs = atMs + OWNER_SWEEP_MS
 	local owner = record.owner
-	local running = GetResourceState(owner) == 'running'
+	local state = GetResourceState(owner)
+	local running = state == 'running' or state == 'starting'
 	local generation = Open77.resource.generation(owner)
 	if not running or (generation ~= nil and generation ~= record.generation) then
 		finish('cancel', 'owner_stopped')
