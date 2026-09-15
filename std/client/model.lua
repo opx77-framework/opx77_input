@@ -24,7 +24,7 @@ function OpxInput.Model.Build(owner, generation, spec) end
 
 --- The focused field.
 ---@param record InputRecord
----@return InputEntry|nil
+---@return InputEntry
 function OpxInput.Model.Entry(record) end
 
 --- Moves the focus between fields, wrapping at both ends.
@@ -34,14 +34,14 @@ function OpxInput.Model.Entry(record) end
 function OpxInput.Model.Move(record, delta) end
 
 --- LEFT or RIGHT on a choice (wraps) or a slider (clamped, then snapped to its step grid).
----@param entry InputEntry|nil
+---@param entry InputEntry
 ---@param delta integer
 ---@return boolean changed
 function OpxInput.Model.Adjust(entry, delta) end
 
 --- Takes a candidate buffer from the page. Length and charset refuse: the accepted buffer
 --- stays as it was and the page is redrawn from it.
----@param entry InputEntry|nil
+---@param entry InputEntry
 ---@param text any
 ---@return boolean redraw the page shows something other than the accepted buffer
 ---@return string|nil refusal a locale key

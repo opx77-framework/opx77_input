@@ -468,7 +468,7 @@ end
 --- @method OpxInput.Model.Entry
 --- @description Answers the focused field of a form.
 --- @param record {InputRecord}
---- @returns {InputEntry|nil}
+--- @returns {InputEntry}
 function OpxInput.Model.Entry(record)
 	return record.fields[record.index]
 end
@@ -489,11 +489,10 @@ end
 --- @author DemiAutomatic
 --- @method OpxInput.Model.Adjust
 --- @description Cycles a choice or steps a slider, answering whether it changed.
---- @param entry {InputEntry|nil}
+--- @param entry {InputEntry}
 --- @param delta {integer}
 --- @returns {boolean}
 function OpxInput.Model.Adjust(entry, delta)
-	if entry == nil then return false end
 	local kind = entry.kind
 	if kind == 'choice' then
 		local total = #entry.options
@@ -518,11 +517,11 @@ end
 --- @author DemiAutomatic
 --- @method OpxInput.Model.Edit
 --- @description Accepts or refuses a candidate text buffer reported by the page.
---- @param entry {InputEntry|nil}
+--- @param entry {InputEntry}
 --- @param text {any}
 --- @returns {boolean, string|nil, table|nil}
 function OpxInput.Model.Edit(entry, text)
-	if entry == nil or entry.kind ~= 'text' then return false end
+	if entry.kind ~= 'text' then return false end
 	if type(text) ~= 'string' then return false end
 	local clean = text:gsub('%c', '')
 	if Text.Span(clean, entry.maxLength) < #clean then
@@ -609,10 +608,8 @@ local function keyHint(record)
 	local entry = record.fields[record.index]
 	local parts = {}
 	if #record.fields > 1 then parts[#parts + 1] = locale('input.hint.move') end
-	if entry ~= nil then
-		parts[#parts + 1] = entry.kind == 'text'
-			and locale('input.hint.edit') or locale('input.hint.spin')
-	end
+	parts[#parts + 1] = entry.kind == 'text'
+		and locale('input.hint.edit') or locale('input.hint.spin')
 	parts[#parts + 1] = locale('input.hint.confirm')
 	parts[#parts + 1] = locale('input.hint.cancel')
 	return table.concat(parts, '  ·  ')
@@ -654,7 +651,7 @@ function OpxInput.Model.View(record)
 		title = record.title,
 		note = record.description,
 		rows = rows,
-		hint = focused and focused.description or nil,
+		hint = focused.description,
 		keys = keyHint(record),
 		status = record.status and record.status.text or nil,
 		statusBad = record.status ~= nil and not record.status.ok or nil,

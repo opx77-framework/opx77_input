@@ -255,7 +255,7 @@ function OpxInput.Runtime.Snapshot()
 		title = record.title,
 		index = record.index,
 		total = #record.fields,
-		fieldId = entry and entry.id or nil,
+		fieldId = entry.id,
 	}
 end
 
@@ -315,7 +315,7 @@ end
 local function onEdit(payload)
 	if record == nil or type(payload) ~= 'table' then return end
 	local entry = Model.Entry(record)
-	if entry == nil or entry.id ~= payload.id then return end
+	if entry.id ~= payload.id then return end
 	local redraw, refusal, params = Model.Edit(entry, payload.text)
 	if refusal ~= nil then
 		notice(refusal, params)

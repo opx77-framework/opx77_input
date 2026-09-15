@@ -123,6 +123,10 @@ paire de substitution, pour qu'un caractère compte pareil des deux côtés.
 La page est un rendu piloté entièrement par Lua. Elle rapporte des touches (`input:key`) et des
 tampons candidats (`input:edit`), elle ne décide de rien.
 
+- **Le champ focalisé existe toujours** : un formulaire a au moins un champ, et `record.index` ne
+  prend que des valeurs valides (`cursorIndex` retombe sur 1, `OpxInput.Model.Move` boucle
+  modulo le nombre de champs, `OpxInput.Model.Check` rend l'index d'un champ réel). Rien ne
+  teste donc `OpxInput.Model.Entry` contre nil.
 - `OpxInput.Input.Action` ne connaît que six noms de touche ; un autre nom est ignoré.
 - `onKey` (`client/main.lua`) prend chaque décision : Échap annule, Entrée soumet, haut et bas
   changent de champ, gauche et droite changent un choix ou un curseur. Sur un refus à la
