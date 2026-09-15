@@ -138,7 +138,6 @@ end
 --- @description Answers the open form once, releasing the keyboard first.
 --- @param action {InputAction}
 --- @param reason {string|nil} Why it was cancelled.
---- @returns {InputHandle}
 local function finish(action, reason)
 	local answered = record
 	record = nil
@@ -149,19 +148,18 @@ local function finish(action, reason)
 	local event = answered.event
 	if event then TriggerEvent(event, payload) end
 	if GLOBAL_EVENT ~= event then TriggerEvent(GLOBAL_EVENT, payload) end
-	return answered.handle
 end
 
 --- @author DemiAutomatic
 --- @method OpxInput.Runtime.Close
 --- @description Cancels the open form when the handle matches it.
 --- @param handle {InputHandle|nil}
---- @param reason {string|nil}
---- @returns {boolean, string|InputHandle|nil}
+--- @param reason {string}
+--- @returns {boolean, string|nil}
 function OpxInput.Runtime.Close(handle, reason)
-	if record == nil then return false, 'no_form_open' end
 	if handle ~= nil and handle ~= record.handle then return false, 'not_open' end
-	return true, finish('cancel', reason)
+	finish('cancel', reason)
+	return true
 end
 
 --- @author DemiAutomatic
@@ -186,11 +184,8 @@ end
 --- @description Writes or clears the transient line under the fields.
 --- @param text {string|nil}
 --- @param ok {boolean|nil} False marks a failure.
---- @returns {boolean}
 function OpxInput.Runtime.SetStatus(text, ok)
-	if record == nil then return false end
 	if writeStatus(text, ok) then draw() end
-	return true
 end
 
 --- @author DemiAutomatic
@@ -210,7 +205,7 @@ end
 local function noteOwner(owner, generation)
 	if ownerGenerations[owner] ~= nil and ownerGenerations[owner] ~= generation then
 		if record ~= nil and record.owner == owner then
-			Runtime.Close(record.handle, 'owner_reloaded')
+			finish('cancel', 'owner_reloaded')
 		end
 	end
 	ownerGenerations[owner] = generation
@@ -357,7 +352,7 @@ local function sweep(atMs)
 	local running = GetResourceState(owner) == 'running'
 	local generation = Open77.resource.generation(owner)
 	if not running or (generation ~= nil and generation ~= record.generation) then
-		Runtime.Close(record.handle, 'owner_stopped')
+		finish('cancel', 'owner_stopped')
 	end
 end
 

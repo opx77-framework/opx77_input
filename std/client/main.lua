@@ -3,17 +3,17 @@
 OpxInput.Runtime = {}
 
 --- Cancels the open form, which still answers with `action = "cancel"` and `reason`.
+--- A form must be open: client/exports.lua checks ownership before calling.
 ---@param handle InputHandle|nil nil closes whatever form is open
----@param reason string|nil the cancel reason carried by the answer
+---@param reason string the cancel reason carried by the answer
 ---@return boolean closed
----@return string|InputHandle|nil result the closed handle, or `no_form_open` / `not_open`
+---@return string|nil error `not_open` when the handle is not the open form's
 function OpxInput.Runtime.Close(handle, reason) end
 
---- Writes, or clears with nil or an empty string, the transient line under the fields.
---- Answers false only when no form is open.
+--- Writes, or clears with nil or an empty string, the transient line under the fields, and
+--- redraws when the line changed. A form must be open.
 ---@param text string|nil
 ---@param ok boolean|nil false marks a failure; default true
----@return boolean
 function OpxInput.Runtime.SetStatus(text, ok) end
 
 --- Opens a form for `owner`. A caller may replace its own open form, which answers with
