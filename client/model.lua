@@ -260,6 +260,18 @@ local function normalizeOptions(field)
 end
 
 --- @author DemiAutomatic
+--- @method anchored
+--- @description Anchors a caller's pattern at both ends so it matches whole text.
+--- @param pattern {string}
+--- @returns {string}
+local function anchored(pattern)
+	if pattern:sub(1, 1) ~= '^' then pattern = '^' .. pattern end
+	local escapes = pattern:match('(%%*)%$$')
+	if escapes == nil or #escapes % 2 == 1 then pattern = pattern .. '$' end
+	return pattern
+end
+
+--- @author DemiAutomatic
 --- @method normalizeTyped
 --- @description Validates what a text field carries beyond the common fields.
 --- @param field {InputField}
@@ -294,7 +306,7 @@ local function normalizeTyped(field)
 			return nil, 'invalid_pattern'
 		end
 		if not pcall(string.match, '', given) then return nil, 'invalid_pattern' end
-		pattern = given
+		pattern = anchored(given)
 	end
 
 	local text = ''

@@ -84,6 +84,10 @@ plus court. Le nom de l'appelant et le type de la spec sont vérifiés une seule
   à chaque frappe.
 - **`pattern` est compilé en l'essayant** (`pcall(string.match, '', pattern)`) : un motif mal
   formé lève au lieu de répondre nil, et il est refusé à `open`. Sa longueur est bornée (64).
+  Il est ensuite ancré aux deux bouts par `anchored` (un `^` en tête s'il manque, un `$` final
+  s'il manque ou s'il est échappé par un nombre impair de `%`), pour que la réponse **entière**
+  doive correspondre : `%d+` et `^%d+$` veulent dire la même chose. L'ancrage vient après la
+  compilation, pour qu'un motif mal formé (`abc%`) ne devienne pas valide en gagnant un `$`.
 - **Une valeur initiale que son propre champ refuserait** (longueur, charset, pattern) est un bug
   de l'appelant, pas du joueur : `invalid_value`.
 - **Deux champs de même id** sont refusés (`duplicate_field_id`) : la réponse est indexée par id,
@@ -262,8 +266,5 @@ possède (la ligne de touches, les quatre refus) sont traduites.
 
 ## Limites connues
 
-- `pattern` est documenté comme devant correspondre à la réponse **entière**, mais
-  `matchesPattern` appelle `string.match` sans ancre : un motif non ancré (`%d+`) accepte
-  `a1b`. Tous les appelants actuels ancrent leurs motifs.
 - La VM serveur charge `shared/text.lua`, `shared/locale.lua` et les deux catalogues sans
   qu'aucun script serveur ne les lise.

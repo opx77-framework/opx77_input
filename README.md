@@ -97,7 +97,7 @@ Eight fields is the point where a form stops being a question and becomes a list
 ### What a text field refuses, and when
 
 - **Length and character class are refused as they are typed.** The accepted buffer does not grow, the page is told to put it back, and a line under the fields says why. `charset` is one of `alnum`, `alpha`, `digits`, `hex` or `name` — a fixed table, because a caller's own character class can be malformed or slow and it would be run against every keystroke.
-- **`required` and `pattern` are checked on ENTER.** The focus moves to the field that refused and the same line says why. `pattern` is a Lua pattern the whole answer must match; an empty field passes it, because emptiness is what `required` answers.
+- **`required` and `pattern` are checked on ENTER.** The focus moves to the field that refused and the same line says why. `pattern` is a Lua pattern the whole answer must match — it is anchored at both ends for you, so `%d+` and `^%d+$` mean the same; an empty field passes it, because emptiness is what `required` answers.
 
 ## Events
 
