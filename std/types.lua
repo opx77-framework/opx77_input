@@ -105,6 +105,7 @@
 ---@field placeholder string|nil
 ---@field maxLength integer|nil
 ---@field pattern string|nil
+---@field patternFailed boolean|nil true once the pattern raised and was logged
 ---@field charset string|nil       the Lua character class the field accepts
 ---@field required boolean|nil
 ---@field options InputOption[]|nil

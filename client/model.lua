@@ -78,6 +78,11 @@ local MAX_TEXT = 512
 local MAX_PATTERN = 64
 
 --- @author DemiAutomatic
+--- @type {integer}
+--- @description Most captures a Lua pattern may open.
+local MAX_CAPTURES = 32
+
+--- @author DemiAutomatic
 --- @type {table<string, string>}
 --- @description Named character classes a text field may accept.
 local CHARSETS = {
@@ -158,7 +163,12 @@ end
 local function matchesPattern(entry, text)
 	if entry.pattern == nil or text == '' then return true end
 	local ok, matched = pcall(string.match, text, entry.pattern)
-	return ok and matched ~= nil
+	if ok then return matched ~= nil end
+	if not entry.patternFailed then
+		entry.patternFailed = true
+		Open77.log.warn(('the pattern of field %s failed: %s'):format(entry.id, tostring(matched)))
+	end
+	return false
 end
 
 --- @author DemiAutomatic
@@ -259,6 +269,76 @@ local function normalizeOptions(field)
 end
 
 --- @author DemiAutomatic
+--- @method classEnd
+--- @description Answers the index after a pattern set, or nil when unclosed.
+--- @param pattern {string}
+--- @param index {integer} First character after the opening bracket.
+--- @param size {integer}
+--- @returns {integer|nil}
+local function classEnd(pattern, index, size)
+	if pattern:sub(index, index) == '^' then index = index + 1 end
+	repeat
+		if index > size then return nil end
+		local character = pattern:sub(index, index)
+		index = index + 1
+		if character == '%' and index <= size then index = index + 1 end
+	until pattern:sub(index, index) == ']'
+	return index + 1
+end
+
+--- @author DemiAutomatic
+--- @method wellFormed
+--- @description Whether a Lua pattern would never raise a malformed pattern error.
+--- @param pattern {string}
+--- @returns {boolean}
+local function wellFormed(pattern)
+	local size = #pattern
+	local index = pattern:sub(1, 1) == '^' and 2 or 1
+	local level, open, closed = 0, {}, {}
+	while index <= size do
+		local character = pattern:sub(index, index)
+		if character == '(' then
+			level = level + 1
+			if level > MAX_CAPTURES then return false end
+			if pattern:sub(index + 1, index + 1) == ')' then
+				closed[level] = true
+				index = index + 2
+			else
+				open[#open + 1] = level
+				index = index + 1
+			end
+		elseif character == ')' then
+			if #open == 0 then return false end
+			closed[open[#open]] = true
+			open[#open] = nil
+			index = index + 1
+		elseif character == '%' then
+			local class = pattern:sub(index + 1, index + 1)
+			if class == '' then return false end
+			if class == 'b' then
+				if index + 3 > size then return false end
+				index = index + 4
+			elseif class == 'f' then
+				if pattern:sub(index + 2, index + 2) ~= '[' then return false end
+				index = classEnd(pattern, index + 3, size)
+				if index == nil then return false end
+			elseif class:find('%d') then
+				if not closed[tonumber(class)] then return false end
+				index = index + 2
+			else
+				index = index + 2
+			end
+		elseif character == '[' then
+			index = classEnd(pattern, index + 1, size)
+			if index == nil then return false end
+		else
+			index = index + 1
+		end
+	end
+	return #open == 0
+end
+
+--- @author DemiAutomatic
 --- @method anchored
 --- @description Anchors a caller's pattern at both ends so it matches whole text.
 --- @param pattern {string}
@@ -304,7 +384,7 @@ local function normalizeTyped(field)
 		if type(given) ~= 'string' or #given == 0 or #given > MAX_PATTERN then
 			return nil, 'invalid_pattern'
 		end
-		if not pcall(string.match, '', given) then return nil, 'invalid_pattern' end
+		if not wellFormed(given) then return nil, 'invalid_pattern' end
 		pattern = anchored(given)
 	end
 
