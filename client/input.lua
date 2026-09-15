@@ -2,10 +2,9 @@
 
 OpxInput = OpxInput or {}
 
-local Input = {}
-OpxInput.input = Input
+OpxInput.Input = {}
 
---- Resolved once by `Input.attach`.
+--- Resolved once by `Input.Attach`.
 local isCaptured = nil
 
 --- True while this resource holds the keyboard, so releasing it is never a guess.
@@ -26,7 +25,7 @@ end
 --- Resolve the host's keyboard reader once, at resource start.
 ---@return boolean readable
 ---@return string|nil note  why it could not be read, for main.lua to log
-function Input.attach()
+function OpxInput.Input.Attach()
 	local input = api()
 	isCaptured = input ~= nil and type(input.isCaptured) == 'function' and input.isCaptured or nil
 	if isCaptured == nil then
@@ -49,7 +48,7 @@ end
 --- Does somebody else own the keyboard -- chat's composer, the pause menu, a panel.
 --- False while this resource holds it: then the surface asking is the one that took it.
 ---@return boolean
-function Input.captured()
+function OpxInput.Input.Captured()
 	if held or isCaptured == nil then return false end
 	local ok, answer = pcall(isCaptured)
 	return ok and answer == true
@@ -59,7 +58,7 @@ end
 ---@param surface table|nil
 ---@return boolean taken
 ---@return string|nil note  the host's answer when it was not a plain `true`
-function Input.grab(surface)
+function OpxInput.Input.Grab(surface)
 	if held then return true end
 	if surface == nil then return false, 'no_surface' end
 	local ok, answer = pcall(surface.setFocus, surface, true, false)
@@ -74,7 +73,7 @@ end
 --- Hand the keyboard back. Safe where it was never taken, and on the way out of a resource
 --- stop, which is the one path that must never leave a player unable to move.
 ---@param surface table|nil
-function Input.release(surface)
+function OpxInput.Input.Release(surface)
 	held = false
 	if surface == nil then return end
 	pcall(surface.setFocus, surface, false, false)
@@ -83,7 +82,7 @@ end
 --- What one key name from the page means here, or nil for a name it may not send.
 ---@param key any
 ---@return string|nil
-function Input.action(key)
+function OpxInput.Input.Action(key)
 	if type(key) ~= 'string' then return nil end
 	return ACTIONS[key]
 end

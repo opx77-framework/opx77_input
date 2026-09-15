@@ -3,11 +3,11 @@
 OpxInput = OpxInput or {}
 
 local Config = OPX_INPUT_CONFIG
-local Model = OpxInput.model
-local Input = OpxInput.input
+local Model = OpxInput.Model
+local Input = OpxInput.Input
 
-local Runtime = {}
-OpxInput.runtime = Runtime
+OpxInput.Runtime = {}
+local Runtime = OpxInput.Runtime
 
 local RESOURCE = GetCurrentResourceName()
 
@@ -83,7 +83,7 @@ local function draw()
 		send('input:hide', {})
 		return
 	end
-	send('input:frame', Model.view(record))
+	send('input:frame', Model.View(record))
 end
 
 --- Answer the open form, exactly once, and hand the keyboard back before anything else.
@@ -95,9 +95,9 @@ local function finish(action, reason)
 	-- Cleared before dispatch: a handler runs inline and can re-enter this file, and a form
 	-- answers once.
 	record = nil
-	Input.release(page)
+	Input.Release(page)
 	draw()
-	local payload = Model.payload(answered, action)
+	local payload = Model.Payload(answered, action)
 	if action == 'cancel' then payload.reason = reason or 'closed' end
 	local event = answered.event
 	if event then TriggerEvent(event, payload) end
@@ -108,7 +108,7 @@ end
 ---@param handle InputHandle|nil
 ---@param reason string|nil
 ---@return boolean, string|InputHandle|nil
-function Runtime.close(handle, reason)
+function OpxInput.Runtime.Close(handle, reason)
 	if record == nil then return false, 'no_form_open' end
 	if handle ~= nil and handle ~= record.handle then return false, 'not_open' end
 	return true, finish('cancel', reason)
@@ -118,9 +118,9 @@ end
 ---@param text string|nil
 ---@param ok boolean|nil  false marks a failure. Default true
 ---@return boolean
-function Runtime.setStatus(text, ok)
+function OpxInput.Runtime.SetStatus(text, ok)
 	if record == nil then return false end
-	local clean = text ~= nil and Model.statusText(text) or nil
+	local clean = text ~= nil and Model.StatusText(text) or nil
 	if clean == nil or clean == '' then
 		if record.status == nil then return true end
 		record.status = nil
@@ -135,7 +135,7 @@ end
 ---@param key string
 ---@param params table|nil
 local function notice(key, params)
-	Runtime.setStatus(locale(key, params), false)
+	Runtime.SetStatus(locale(key, params), false)
 end
 
 --- Note the caller's generation, and drop its form if it has reloaded since.
@@ -144,7 +144,7 @@ end
 local function noteOwner(owner, generation)
 	if ownerGenerations[owner] ~= nil and ownerGenerations[owner] ~= generation then
 		if record ~= nil and record.owner == owner then
-			Runtime.close(record.handle, 'owner_reloaded')
+			Runtime.Close(record.handle, 'owner_reloaded')
 		end
 	end
 	ownerGenerations[owner] = generation
@@ -155,15 +155,15 @@ end
 ---@param generation integer
 ---@param spec InputSpec
 ---@return InputRecord|nil, string|nil
-function Runtime.open(owner, generation, spec)
+function OpxInput.Runtime.Open(owner, generation, spec)
 	noteOwner(owner, generation)
 
 	if record ~= nil and record.owner ~= owner then return nil, 'input_busy' end
 	-- Asked before the form is built: this surface is about to take the keyboard, and
 	-- taking it from chat's composer would type the player's line into nothing.
-	if record == nil and Input.captured() then return nil, 'keyboard_busy' end
+	if record == nil and Input.Captured() then return nil, 'keyboard_busy' end
 
-	local built, reason = Model.build(owner, generation, spec)
+	local built, reason = Model.Build(owner, generation, spec)
 	if built == nil then return nil, reason end
 
 	if record ~= nil then finish('cancel', 'reopened') end
@@ -172,22 +172,22 @@ function Runtime.open(owner, generation, spec)
 	nextHandle = nextHandle + 1
 	record = built
 
-	local taken, note = Input.grab(page)
+	local taken, note = Input.Grab(page)
 	if not taken then
 		record = nil
 		return nil, 'no_keyboard'
 	end
 	if note ~= nil then Open77.log.warn('keyboard focus answered ' .. note) end
 
-	if spec.status ~= nil then Runtime.setStatus(spec.status) end
+	if spec.status ~= nil then Runtime.SetStatus(spec.status) end
 	draw()
 	return record
 end
 
 ---@return InputState
-function Runtime.snapshot()
+function OpxInput.Runtime.Snapshot()
 	if record == nil then return { open = false } end
-	local entry = Model.entry(record)
+	local entry = Model.Entry(record)
 	return {
 		open = true,
 		handle = record.handle,
@@ -201,12 +201,12 @@ function Runtime.snapshot()
 end
 
 ---@return string|nil
-function Runtime.owner()
+function OpxInput.Runtime.Owner()
 	return record and record.owner or nil
 end
 
 ---@return boolean
-function Runtime.unavailable()
+function OpxInput.Runtime.Unavailable()
 	return surfaceFailed
 end
 
@@ -214,7 +214,7 @@ end
 ---@param key any
 local function onKey(key)
 	if record == nil then return end
-	local action = Input.action(key)
+	local action = Input.Action(key)
 	if action == nil then return end
 
 	if action == 'cancel' then
@@ -223,7 +223,7 @@ local function onKey(key)
 	end
 
 	if action == 'submit' then
-		local index, refusal = Model.check(record)
+		local index, refusal = Model.Check(record)
 		if index == nil then
 			finish('submit')
 			return
@@ -235,10 +235,10 @@ local function onKey(key)
 	end
 
 	local moved = false
-	if action == 'up' then moved = Model.move(record, -1) end
-	if action == 'down' then moved = Model.move(record, 1) end
-	if action == 'left' then moved = Model.adjust(Model.entry(record), -1) end
-	if action == 'right' then moved = Model.adjust(Model.entry(record), 1) end
+	if action == 'up' then moved = Model.Move(record, -1) end
+	if action == 'down' then moved = Model.Move(record, 1) end
+	if action == 'left' then moved = Model.Adjust(Model.Entry(record), -1) end
+	if action == 'right' then moved = Model.Adjust(Model.Entry(record), 1) end
 	if moved then draw() end
 end
 
@@ -246,10 +246,10 @@ end
 ---@param payload any
 local function onEdit(payload)
 	if record == nil or type(payload) ~= 'table' then return end
-	local entry = Model.entry(record)
+	local entry = Model.Entry(record)
 	-- An edit from a field that no longer has the focus is stale, and is dropped.
 	if entry == nil or entry.id ~= payload.id then return end
-	local redraw, refusal, params = Model.edit(entry, payload.text)
+	local redraw, refusal, params = Model.Edit(entry, payload.text)
 	if refusal ~= nil then
 		notice(refusal, params)
 	elseif redraw then
@@ -279,7 +279,7 @@ local function sweep(atMs)
 		generation = Open77.resource.generation(owner)
 	end
 	if not running or (generation ~= nil and generation ~= record.generation) then
-		Runtime.close(record.handle, 'owner_stopped')
+		Runtime.Close(record.handle, 'owner_stopped')
 	end
 end
 
@@ -314,7 +314,7 @@ end)
 AddEventHandler('onClientResourceStart', function(name)
 	if name ~= RESOURCE then return end
 
-	local readable, note = Input.attach()
+	local readable, note = Input.Attach()
 	if not readable then
 		Open77.log.warn('the keyboard cannot be read (' .. tostring(note) .. ')')
 		Open77.log.warn('  a form will open over whatever else already holds it.')
@@ -382,6 +382,6 @@ AddEventHandler('onClientResourceStop', function(name)
 	-- Tell whoever had a form open, while there is still a Lua state to do it.
 	if record ~= nil then finish('cancel', 'input_stopped') end
 	-- Unconditional: a keyboard left captured over a stop leaves the player unable to move.
-	Input.release(page)
+	Input.Release(page)
 	page, pageReady = nil, false
 end)

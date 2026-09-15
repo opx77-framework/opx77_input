@@ -1,8 +1,8 @@
 --- The public export surface. Every call answers an InputResponse and never raises; `error`
 --- is one of the codes in types.lua. Client-side only: called from a caller's client half.
 
-local Runtime = OpxInput.runtime
-local Model = OpxInput.model
+local Runtime = OpxInput.Runtime
+local Model = OpxInput.Model
 
 ---@param ok boolean
 ---@param values table|nil
@@ -19,7 +19,7 @@ end
 local function caller()
 	local owner = GetInvokingResource()
 	local generation = GetInvokingResourceGeneration()
-	if not Model.validName(owner, 64) or type(generation) ~= 'number' then
+	if not Model.ValidName(owner, 64) or type(generation) ~= 'number' then
 		return nil, 'export_call_required'
 	end
 	return owner, generation
@@ -28,7 +28,7 @@ end
 --- Refuse everything when the WebUI surface never came up.
 ---@return InputResponse|nil
 local function unavailable()
-	if Runtime.unavailable and Runtime.unavailable() then
+	if Runtime.Unavailable and Runtime.Unavailable() then
 		return response(false, { error = 'no_surface' })
 	end
 	return nil
@@ -38,8 +38,8 @@ end
 ---@param owner string
 ---@return InputResponse|nil
 local function notMine(owner)
-	if Runtime.owner() == nil then return response(false, { error = 'no_form_open' }) end
-	if Runtime.owner() ~= owner then return response(false, { error = 'not_owner' }) end
+	if Runtime.Owner() == nil then return response(false, { error = 'no_form_open' }) end
+	if Runtime.Owner() ~= owner then return response(false, { error = 'not_owner' }) end
 	return nil
 end
 
@@ -54,7 +54,7 @@ exports('open', function(spec)
 	if not owner then return response(false, { error = generation }) end
 	if type(spec) ~= 'table' then return response(false, { error = 'spec_must_be_a_table' }) end
 
-	local record, reason = Runtime.open(owner, generation, spec)
+	local record, reason = Runtime.Open(owner, generation, spec)
 	if record == nil then return response(false, { error = reason }) end
 	return response(true, {
 		handle = record.handle,
@@ -75,7 +75,7 @@ exports('close', function(handle)
 	local refused = notMine(owner)
 	if refused then return refused end
 
-	local ok, reason = Runtime.close(handle, 'caller')
+	local ok, reason = Runtime.Close(handle, 'caller')
 	if not ok then return response(false, { error = reason }) end
 	return response(true, {})
 end)
@@ -85,7 +85,7 @@ end)
 ---@return InputState
 exports('state', function()
 	local owner = caller()
-	local snapshot = Runtime.snapshot()
+	local snapshot = Runtime.Snapshot()
 	local mine = owner ~= nil and snapshot.owner == owner
 
 	if not mine then
@@ -108,9 +108,9 @@ exports('setStatus', function(text, ok)
 	if not owner then return response(false, { error = generation }) end
 	local refused = notMine(owner)
 	if refused then return refused end
-	if text ~= nil and Model.statusText(text) == nil then
+	if text ~= nil and Model.StatusText(text) == nil then
 		return response(false, { error = 'invalid_status' })
 	end
-	Runtime.setStatus(text, ok)
+	Runtime.SetStatus(text, ok)
 	return response(true, {})
 end)

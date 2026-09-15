@@ -7,7 +7,8 @@ local catalogs = {}
 local active = 'en'
 local FALLBACK = 'en'
 
-local Locale = {}
+OpxInput.Locale = {}
+local Locale = OpxInput.Locale
 
 --- Fills `{name}` from `params`; a placeholder with no value is left as it was written.
 ---@param text string
@@ -24,7 +25,7 @@ end
 --- Merges `strings` into the catalogue for `code`.
 ---@param code string
 ---@param strings table<string, string>
-function Locale.register(code, strings)
+function OpxInput.Locale.register(code, strings)
 	local catalog = catalogs[code]
 	if not catalog then
 		catalog = {}
@@ -37,20 +38,20 @@ end
 --- falls back: catalogues register after this file loads.
 ---@param code string
 ---@return boolean applied
-function Locale.set(code)
+function OpxInput.Locale.Set(code)
 	if type(code) ~= 'string' or code == '' then return false end
 	active = code
 	return true
 end
 
 ---@return string
-function Locale.current()
+function OpxInput.Locale.Current()
 	return active
 end
 
 ---@param key string
 ---@return boolean
-function Locale.exists(key)
+function OpxInput.Locale.Exists(key)
 	return (catalogs[active] and catalogs[active][key] ~= nil)
 		or (catalogs[FALLBACK] and catalogs[FALLBACK][key] ~= nil)
 end
@@ -59,7 +60,7 @@ end
 ---@param key string
 ---@param params? table<string, string|number>
 ---@return string
-function Locale.t(key, params)
+function OpxInput.Locale.Get(key, params)
 	local catalog = catalogs[active]
 	local text = (catalog and catalog[key])
 		or (catalogs[FALLBACK] and catalogs[FALLBACK][key])
@@ -67,11 +68,9 @@ function Locale.t(key, params)
 	return interpolate(text, params)
 end
 
-OpxInput.Locale = Locale
-
 --- The shorthand every file below the catalogues uses.
 ---@type fun(key: string, params?: table<string, string|number>): string
-locale = Locale.t
+locale = Locale.Get
 
 -- applied at load, or LOCALE in config.lua is inert
-Locale.set(OPX_INPUT_CONFIG and OPX_INPUT_CONFIG.LOCALE)
+Locale.Set(OPX_INPUT_CONFIG and OPX_INPUT_CONFIG.LOCALE)

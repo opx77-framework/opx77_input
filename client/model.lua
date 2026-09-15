@@ -7,8 +7,8 @@ OpxInput.VERSION = '0.1.0'
 
 local Text = OpxInput.Text
 
-local Model = {}
-OpxInput.model = Model
+OpxInput.Model = {}
+local Model = OpxInput.Model
 
 --- How many fields one modal answers. More than this is a list, and a list is what
 --- opx77_menu draws.
@@ -73,7 +73,7 @@ local function displayText(value, maximum)
 	value = value:gsub('%c', ' ')
 	-- `#value` counts bytes and `maximum` counts characters: fewer bytes needs no measuring
 	if #value <= maximum then return value end
-	if Text.span(value, maximum) >= #value then return value end
+	if Text.Span(value, maximum) >= #value then return value end
 	return nil
 end
 
@@ -81,12 +81,12 @@ end
 --- sanitise to nil and silently clear the line, so it is refused rather than cleaned.
 ---@param value any
 ---@return string|nil
-function Model.statusText(value)
+function OpxInput.Model.StatusText(value)
 	return displayText(value, MAX_STATUS)
 end
 
 --- Resource-name validator, shared with client/exports.lua.
-Model.validName = validName
+OpxInput.Model.ValidName = validName
 
 --- Does this text sit inside the field's character class? An empty field always does:
 --- emptiness is what `required` answers.
@@ -349,7 +349,7 @@ end
 ---@param generation integer
 ---@param spec InputSpec
 ---@return InputRecord|nil, string|nil  the record, or nil and a reason
-function Model.build(owner, generation, spec)
+function OpxInput.Model.Build(owner, generation, spec)
 	if not validName(owner, 64) then return nil, 'invalid_owner' end
 	if type(spec) ~= 'table' then return nil, 'spec_must_be_a_table' end
 
@@ -373,7 +373,7 @@ function Model.build(owner, generation, spec)
 		return nil, 'invalid_event'
 	end
 
-	if spec.status ~= nil and Model.statusText(spec.status) == nil then
+	if spec.status ~= nil and Model.StatusText(spec.status) == nil then
 		return nil, 'invalid_status'
 	end
 
@@ -401,7 +401,7 @@ end
 --- The focused field.
 ---@param record InputRecord
 ---@return InputEntry|nil
-function Model.entry(record)
+function OpxInput.Model.Entry(record)
 	return record.fields[record.index]
 end
 
@@ -409,7 +409,7 @@ end
 ---@param record InputRecord
 ---@param delta integer
 ---@return boolean  true when the focus moved
-function Model.move(record, delta)
+function OpxInput.Model.Move(record, delta)
 	local total = #record.fields
 	if total <= 1 then return false end
 	record.index = ((record.index - 1 + delta) % total) + 1
@@ -420,7 +420,7 @@ end
 ---@param entry InputEntry|nil
 ---@param delta integer
 ---@return boolean  true when something changed
-function Model.adjust(entry, delta)
+function OpxInput.Model.Adjust(entry, delta)
 	if entry == nil then return false end
 	local kind = entry.kind
 	if kind == 'choice' then
@@ -452,11 +452,11 @@ end
 ---@return boolean redraw  the page is showing something other than the accepted buffer
 ---@return string|nil refusal  a locale key when a limit refused the candidate
 ---@return table|nil params
-function Model.edit(entry, text)
+function OpxInput.Model.Edit(entry, text)
 	if entry == nil or entry.kind ~= 'text' then return false end
 	if type(text) ~= 'string' then return false end
 	local clean = text:gsub('%c', '')
-	if Text.span(clean, entry.maxLength) < #clean then
+	if Text.Span(clean, entry.maxLength) < #clean then
 		return false, 'input.refuse.tooLong', { max = entry.maxLength }
 	end
 	if not withinCharset(entry, clean) then
@@ -473,7 +473,7 @@ end
 ---@param record InputRecord
 ---@return integer|nil index
 ---@return string|nil refusal  a locale key
-function Model.check(record)
+function OpxInput.Model.Check(record)
 	for index = 1, #record.fields do
 		local entry = record.fields[index]
 		if entry.kind == 'text' then
@@ -491,7 +491,7 @@ end
 --- The machine-readable value of one field, for the answer.
 ---@param entry InputEntry
 ---@return string|number
-function Model.raw(entry)
+function OpxInput.Model.Raw(entry)
 	local kind = entry.kind
 	if kind == 'choice' then return entry.options[entry.selected].value end
 	if kind == 'slider' then return entry.slider.value end
@@ -501,7 +501,7 @@ end
 --- The rendered value of one field, for the page.
 ---@param entry InputEntry
 ---@return string
-function Model.value(entry)
+function OpxInput.Model.Value(entry)
 	local kind = entry.kind
 	if kind == 'choice' then return entry.options[entry.selected].label end
 	if kind == 'slider' then
@@ -518,11 +518,11 @@ end
 --- Every answer, keyed by field id.
 ---@param record InputRecord
 ---@return table<string, string|number>
-function Model.values(record)
+function OpxInput.Model.Values(record)
 	local values = {}
 	for index = 1, #record.fields do
 		local entry = record.fields[index]
-		values[entry.id] = Model.raw(entry)
+		values[entry.id] = Model.Raw(entry)
 	end
 	return values
 end
@@ -546,7 +546,7 @@ end
 --- Everything the page needs for one frame.
 ---@param record InputRecord
 ---@return InputView
-function Model.view(record)
+function OpxInput.Model.View(record)
 	local rows = {}
 	for index = 1, #record.fields do
 		local entry = record.fields[index]
@@ -564,7 +564,7 @@ function Model.view(record)
 			row.placeholder = entry.placeholder
 			row.max = entry.maxLength
 		else
-			row.value = Model.value(entry)
+			row.value = Model.Value(entry)
 		end
 		if kind == 'slider' then
 			local slider = entry.slider
@@ -591,13 +591,13 @@ end
 ---@param record InputRecord
 ---@param action InputAction
 ---@return InputPayload
-function Model.payload(record, action)
+function OpxInput.Model.Payload(record, action)
 	return {
 		form = record.id,
 		handle = record.handle,
 		owner = record.owner,
 		action = action,
 		data = record.data,
-		values = action == 'submit' and Model.values(record) or nil,
+		values = action == 'submit' and Model.Values(record) or nil,
 	}
 end
