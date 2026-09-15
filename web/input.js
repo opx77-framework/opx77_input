@@ -52,7 +52,6 @@
   }
 
   var elements = {
-    scrim: document.getElementById("scrim"),
     strip: document.getElementById("strip"),
     title: document.getElementById("title"),
     note: document.getElementById("note"),
