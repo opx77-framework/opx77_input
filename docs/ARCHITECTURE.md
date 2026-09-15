@@ -81,7 +81,8 @@ plus court. Le nom de l'appelant et le type de la spec sont vérifiés une seule
   voyage dans un seul payload d'event, donc le plafond est une borne de payload, pas un goût.
 - **Les jeux de caractères sont une table fixe** (`CHARSETS`). Un appelant ne peut pas passer sa
   propre classe : une classe mal formée lève dans `string.match`, et une classe lente tournerait
-  à chaque frappe.
+  à chaque frappe. Les cinq motifs de la table sont bien formés, donc `withinCharset` les applique
+  sans `pcall` ; `matchesPattern` garde le sien, parce que le motif vient de l'appelant.
 - **`pattern` est compilé en l'essayant** (`pcall(string.match, '', pattern)`) : un motif mal
   formé lève au lieu de répondre nil, et il est refusé à `open`. Sa longueur est bornée (64).
   Il est ensuite ancré aux deux bouts par `anchored` (un `^` en tête s'il manque, un `$` final
@@ -268,5 +269,10 @@ possède (la ligne de touches, les quatre refus) sont traduites.
 
 ## Limites connues
 
+- Essayer `pattern` contre la chaîne vide ne prouve pas qu'il est bien formé : Lua ne signale
+  une erreur de motif que lorsque la correspondance l'atteint, et `a%b` passe l'essai (la
+  correspondance échoue sur `a` avant d'atteindre `%b`). Un tel motif est accepté à `open`, puis
+  `matchesPattern` répond faux sur toute réponse non vide : le champ ne peut plus être soumis,
+  seulement annulé. Aucun appelant actuel ne passe de motif mal formé.
 - La VM serveur charge `shared/text.lua`, `shared/locale.lua` et les deux catalogues sans
   qu'aucun script serveur ne les lise.

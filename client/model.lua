@@ -146,8 +146,7 @@ OpxInput.Model.ValidName = validName
 --- @returns {boolean}
 local function withinCharset(entry, text)
 	if entry.charset == nil or text == '' then return true end
-	local ok, matched = pcall(string.match, text, entry.charset)
-	return ok and matched ~= nil
+	return text:match(entry.charset) ~= nil
 end
 
 --- @author DemiAutomatic
