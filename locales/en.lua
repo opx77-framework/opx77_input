@@ -1,3 +1,7 @@
+--- @author DemiAutomatic
+--- @file locales/en.lua
+--- @description English player-facing text for the input form.
+
 OpxInput.Locale.register('en', {
 	['input.hint.edit'] = 'TYPE TO EDIT',
 	['input.hint.spin'] = '← → CHANGE',

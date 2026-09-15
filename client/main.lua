@@ -1,4 +1,6 @@
---- The surface, the one open form, and the single answer it raises.
+--- @author DemiAutomatic
+--- @file client/main.lua
+--- @description The surface, the one open form, and the answer it raises.
 
 OpxInput = OpxInput or {}
 
@@ -9,36 +11,75 @@ local Input = OpxInput.Input
 OpxInput.Runtime = {}
 local Runtime = OpxInput.Runtime
 
+--- @author DemiAutomatic
+--- @type {string}
+--- @description This resource's own name, for its lifecycle events.
 local RESOURCE = GetCurrentResourceName()
 
+--- @author DemiAutomatic
+--- @type {table|nil}
+--- @description The WebUI surface, nil until created or after a stop.
 local page
 
---- True once WebUI.create has refused; the exports refuse too.
+--- @author DemiAutomatic
+--- @type {boolean}
+--- @description Whether WebUI.create refused, which makes the exports refuse.
 local surfaceFailed = false
+
+--- @author DemiAutomatic
+--- @type {boolean}
+--- @description Whether the page has reported ready to receive messages.
 local pageReady = false
 
---- The one open form, or nil.
----@type InputRecord|nil
+--- @author DemiAutomatic
+--- @type {InputRecord|nil}
+--- @description The one open form, or nil.
 local record
 
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Handle the next opened form receives.
 local nextHandle = 1
 
---- owner -> the generation last seen, so a reloaded caller's form goes away with it.
+--- @author DemiAutomatic
+--- @type {table<string, integer>}
+--- @description Generation last seen per caller, to drop a reloaded caller's form.
 local ownerGenerations = {}
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Monotonic milliseconds before which the owner sweep does not run.
 local nextOwnerSweepMs = 0
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Milliseconds between two checks of the open form's owner.
 local OWNER_SWEEP_MS = 1000
 
---- How long the line under the fields stays up, and the loop's period while a form is open.
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Milliseconds the status line stays up.
 local STATUS_MS = 6000
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Milliseconds between two passes of the form loop.
 local IDLE_MS = 250
 
---- Raised beside the caller's own event, so one listener can watch every form.
+--- @author DemiAutomatic
+--- @type {string}
+--- @description Local event raised beside the caller's own for every answer.
 local GLOBAL_EVENT = 'opx77:input'
 
---- The scheduler clock in milliseconds; `monotonic` answers SECONDS. A non-finite reading is
---- dropped rather than propagated: a NaN would expire nothing, an infinity everything.
----@return integer
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Last finite clock reading in milliseconds, held across failed reads.
 local lastMs = 0
+
+--- @author DemiAutomatic
+--- @method nowMs
+--- @description Host-monotonic milliseconds, holding the last finite reading.
+--- @returns {integer}
 local function nowMs()
 	local read, seconds = pcall(Open77.time.monotonic)
 	if read and type(seconds) == 'number' and seconds == seconds and
@@ -48,13 +89,16 @@ local function nowMs()
 	return lastMs
 end
 
---- True while `page:send` is failing, so a dead surface is logged once, not every frame.
+--- @author DemiAutomatic
+--- @type {boolean}
+--- @description Whether the last page write failed, so failures log once.
 local sendFailing = false
 
---- One write to the page. Guarded: `page:send` raises, and both the exports and the page's
---- own handlers reach it.
----@param name string
----@param payload table
+--- @author DemiAutomatic
+--- @method send
+--- @description Sends one message to the page once ready, logging the first failure.
+--- @param name {string}
+--- @param payload {table}
 local function send(name, payload)
 	if page == nil or not pageReady then return end
 	local ok, reason = pcall(page.send, page, name, payload)
@@ -68,7 +112,9 @@ local function send(name, payload)
 	sendFailing = true
 end
 
---- Send the layout to the page. Once, at ready: none of it changes while the resource runs.
+--- @author DemiAutomatic
+--- @method sendConfig
+--- @description Sends the configured anchor, width and scrim to the page.
 local function sendConfig()
 	send('input:config', {
 		anchor = Config.ANCHOR,
@@ -77,6 +123,9 @@ local function sendConfig()
 	})
 end
 
+--- @author DemiAutomatic
+--- @method draw
+--- @description Sends the open form's frame, or hides the page without one.
 local function draw()
 	if page == nil or not pageReady then return end
 	if record == nil then
@@ -86,14 +135,14 @@ local function draw()
 	send('input:frame', Model.View(record))
 end
 
---- Answer the open form, exactly once, and hand the keyboard back before anything else.
----@param action InputAction
----@param reason string|nil  why it was cancelled
----@return InputHandle
+--- @author DemiAutomatic
+--- @method finish
+--- @description Answers the open form once, releasing the keyboard first.
+--- @param action {InputAction}
+--- @param reason {string|nil} Why it was cancelled.
+--- @returns {InputHandle}
 local function finish(action, reason)
 	local answered = record
-	-- Cleared before dispatch: a handler runs inline and can re-enter this file, and a form
-	-- answers once.
 	record = nil
 	Input.Release(page)
 	draw()
@@ -105,19 +154,24 @@ local function finish(action, reason)
 	return answered.handle
 end
 
----@param handle InputHandle|nil
----@param reason string|nil
----@return boolean, string|InputHandle|nil
+--- @author DemiAutomatic
+--- @method OpxInput.Runtime.Close
+--- @description Cancels the open form when the handle matches it.
+--- @param handle {InputHandle|nil}
+--- @param reason {string|nil}
+--- @returns {boolean, string|InputHandle|nil}
 function OpxInput.Runtime.Close(handle, reason)
 	if record == nil then return false, 'no_form_open' end
 	if handle ~= nil and handle ~= record.handle then return false, 'not_open' end
 	return true, finish('cancel', reason)
 end
 
---- Write, or clear with `nil`, the transient line under the fields.
----@param text string|nil
----@param ok boolean|nil  false marks a failure. Default true
----@return boolean
+--- @author DemiAutomatic
+--- @method OpxInput.Runtime.SetStatus
+--- @description Writes or clears the transient line under the fields.
+--- @param text {string|nil}
+--- @param ok {boolean|nil} False marks a failure.
+--- @returns {boolean}
 function OpxInput.Runtime.SetStatus(text, ok)
 	if record == nil then return false end
 	local clean = text ~= nil and Model.StatusText(text) or nil
@@ -131,16 +185,20 @@ function OpxInput.Runtime.SetStatus(text, ok)
 	return true
 end
 
---- Show one of this resource's own refusals, in the player's language.
----@param key string
----@param params table|nil
+--- @author DemiAutomatic
+--- @method notice
+--- @description Shows one of this resource's own refusals, translated.
+--- @param key {string}
+--- @param params {table|nil}
 local function notice(key, params)
 	Runtime.SetStatus(locale(key, params), false)
 end
 
---- Note the caller's generation, and drop its form if it has reloaded since.
----@param owner string
----@param generation integer
+--- @author DemiAutomatic
+--- @method noteOwner
+--- @description Records a caller's generation, cancelling its form after a reload.
+--- @param owner {string}
+--- @param generation {integer}
 local function noteOwner(owner, generation)
 	if ownerGenerations[owner] ~= nil and ownerGenerations[owner] ~= generation then
 		if record ~= nil and record.owner == owner then
@@ -150,17 +208,17 @@ local function noteOwner(owner, generation)
 	ownerGenerations[owner] = generation
 end
 
---- Open a form. A caller may replace its own; it may never replace another's.
----@param owner string
----@param generation integer
----@param spec InputSpec
----@return InputRecord|nil, string|nil
+--- @author DemiAutomatic
+--- @method OpxInput.Runtime.Open
+--- @description Opens a form, replacing only the caller's own.
+--- @param owner {string}
+--- @param generation {integer}
+--- @param spec {InputSpec}
+--- @returns {InputRecord|nil, string|nil}
 function OpxInput.Runtime.Open(owner, generation, spec)
 	noteOwner(owner, generation)
 
 	if record ~= nil and record.owner ~= owner then return nil, 'input_busy' end
-	-- Asked before the form is built: this surface is about to take the keyboard, and
-	-- taking it from chat's composer would type the player's line into nothing.
 	if record == nil and Input.Captured() then return nil, 'keyboard_busy' end
 
 	local built, reason = Model.Build(owner, generation, spec)
@@ -184,7 +242,10 @@ function OpxInput.Runtime.Open(owner, generation, spec)
 	return record
 end
 
----@return InputState
+--- @author DemiAutomatic
+--- @method OpxInput.Runtime.Snapshot
+--- @description Describes where the player is in the open form.
+--- @returns {InputState}
 function OpxInput.Runtime.Snapshot()
 	if record == nil then return { open = false } end
 	local entry = Model.Entry(record)
@@ -200,18 +261,26 @@ function OpxInput.Runtime.Snapshot()
 	}
 end
 
----@return string|nil
+--- @author DemiAutomatic
+--- @method OpxInput.Runtime.Owner
+--- @description Answers the resource that owns the open form.
+--- @returns {string|nil}
 function OpxInput.Runtime.Owner()
 	return record and record.owner or nil
 end
 
----@return boolean
+--- @author DemiAutomatic
+--- @method OpxInput.Runtime.Unavailable
+--- @description Whether the WebUI surface failed to come up.
+--- @returns {boolean}
 function OpxInput.Runtime.Unavailable()
 	return surfaceFailed
 end
 
---- One key the page reported. Every decision about what it means is made here.
----@param key any
+--- @author DemiAutomatic
+--- @method onKey
+--- @description Acts on one key the page reported.
+--- @param key {any}
 local function onKey(key)
 	if record == nil then return end
 	local action = Input.Action(key)
@@ -228,7 +297,6 @@ local function onKey(key)
 			finish('submit')
 			return
 		end
-		-- Put the player on the field that refused before saying why.
 		record.index = index
 		notice(refusal)
 		return
@@ -242,12 +310,13 @@ local function onKey(key)
 	if moved then draw() end
 end
 
---- One candidate buffer the page reported. Lua decides what the field now holds.
----@param payload any
+--- @author DemiAutomatic
+--- @method onEdit
+--- @description Decides what the focused text field holds after a page edit.
+--- @param payload {any}
 local function onEdit(payload)
 	if record == nil or type(payload) ~= 'table' then return end
 	local entry = Model.Entry(record)
-	-- An edit from a field that no longer has the focus is stale, and is dropped.
 	if entry == nil or entry.id ~= payload.id then return end
 	local redraw, refusal, params = Model.Edit(entry, payload.text)
 	if refusal ~= nil then
@@ -257,8 +326,10 @@ local function onEdit(payload)
 	end
 end
 
---- Clear the status line once `STATUS_MS` has passed.
----@param atMs integer
+--- @author DemiAutomatic
+--- @method expireStatus
+--- @description Clears the status line once it has been up long enough.
+--- @param atMs {integer}
 local function expireStatus(atMs)
 	if record == nil or record.status == nil then return end
 	if atMs - record.status.atMs < STATUS_MS then return end
@@ -266,8 +337,10 @@ local function expireStatus(atMs)
 	draw()
 end
 
---- Cancel the form when its owner has stopped or reloaded. Runs once per `OWNER_SWEEP_MS`.
----@param atMs integer
+--- @author DemiAutomatic
+--- @method sweep
+--- @description Cancels the form when its owner has stopped or reloaded.
+--- @param atMs {integer}
 local function sweep(atMs)
 	if record == nil then return end
 	if atMs < nextOwnerSweepMs then return end
@@ -283,21 +356,22 @@ local function sweep(atMs)
 	end
 end
 
---- One pass over the open form. Every call it makes is a host call, so the thread runs it
---- under `pcall`.
+--- @author DemiAutomatic
+--- @method frameTick
+--- @description One pass over the open form: status expiry, then the owner sweep.
 local function frameTick()
-	-- One clock read per pass: `monotonic` is a host call.
 	local atMs = nowMs()
 	expireStatus(atMs)
 	sweep(atMs)
 end
 
---- One pass of a forever-thread. A raise from a host call would otherwise end that loop for
---- the session, so it is logged once per run of failures and the loop carries on.
----@param label string
----@param body fun()
----@param failing boolean  whether the previous pass already failed
----@return boolean failing
+--- @author DemiAutomatic
+--- @method guarded
+--- @description Runs one loop pass under pcall, logging the first failure only.
+--- @param label {string}
+--- @param body {fun()}
+--- @param failing {boolean}
+--- @returns {boolean}
 local function guarded(label, body, failing)
 	local ok, reason = pcall(body)
 	if ok then return false end
@@ -305,12 +379,17 @@ local function guarded(label, body, failing)
 	return true
 end
 
--- The plugin swallows Escape and raises this instead. The page reports the same key; both
--- reach `finish`, and the record is cleared there, so the second one finds nothing to do.
+--- @author DemiAutomatic
+--- @event open77:pauseKey
+--- @description Cancels the open form when the platform's pause key is pressed.
 AddEventHandler('open77:pauseKey', function()
 	if record ~= nil then finish('cancel', 'pause') end
 end)
 
+--- @author DemiAutomatic
+--- @event onClientResourceStart
+--- @description Attaches the keyboard, creates the surface and starts the form loop.
+--- @param name {string}
 AddEventHandler('onClientResourceStart', function(name)
 	if name ~= RESOURCE then return end
 
@@ -320,23 +399,17 @@ AddEventHandler('onClientResourceStart', function(name)
 		Open77.log.warn('  a form will open over whatever else already holds it.')
 	end
 
-	-- Cleared on every start: a reload after a failure must be able to succeed.
 	surfaceFailed = false
 
 	local reason
 	page, reason = WebUI.create({
 		entry = 'web/index.html',
-		-- "hud", like opx77_chat's box: the surface takes focus explicitly, and only while a
-		-- form is open.
 		layer = 'hud',
 		width = 1920,
 		height = 1080,
-		-- 60, not the menu's 30: this surface carries a caret and the player is typing at it.
 		fps = 60,
-		-- Above opx77_menu (725), below open77_admin's strip (730).
 		zIndex = 728,
 		transparent = true,
-		-- Created visible: a surface created hidden never uploads a frame once shown.
 		visible = true,
 	})
 	if page == nil then
@@ -377,11 +450,13 @@ AddEventHandler('onClientResourceStart', function(name)
 	end)
 end)
 
+--- @author DemiAutomatic
+--- @event onClientResourceStop
+--- @description Answers the open form and releases the keyboard on this resource's stop.
+--- @param name {string}
 AddEventHandler('onClientResourceStop', function(name)
 	if name ~= RESOURCE then return end
-	-- Tell whoever had a form open, while there is still a Lua state to do it.
 	if record ~= nil then finish('cancel', 'input_stopped') end
-	-- Unconditional: a keyboard left captured over a stop leaves the player unable to move.
 	Input.Release(page)
 	page, pageReady = nil, false
 end)

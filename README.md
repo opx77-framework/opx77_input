@@ -118,7 +118,20 @@ A slider answers a number, and it is a float even where it renders whole: `40` c
 
 ## Configuration
 
-`config.lua`. Language, anchor, strip width, and whether the scene behind it is dimmed. `ANCHOR` ships `"center"`: the form is drawn in the menu's style, but it is a question the player has to answer, so it sits in the middle of the screen rather than where a menu does. It also takes `opx77_menu`'s four anchors (`"top-left"`, `"top-right"`, `"left"`, `"right"`) for a server that wants the form where the list before it sat. `WIDTH` takes the same value as the menu's and ships with the same default. `DIM` ships off, because the menu draws no scrim.
+`config.lua`. Language, anchor, strip width, and whether the scene behind it is dimmed.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `LOCALE` | `"en"` | The catalogue in `locales/` the lines this resource owns are read from. An unknown code falls back to `en`. |
+| `ANCHOR` | `"center"` | Where the form sits: `"center"`, `"top-left"`, `"top-right"`, `"left"` or `"right"`. The last two are mid-height. Anything unrecognised falls back to `"center"`. |
+| `WIDTH` | `340` | Strip width in pixels, at the 1920-wide surface. Same value and default as `opx77_menu`'s `WIDTH`. |
+| `DIM` | `false` | Draw a scrim behind the open form. |
+
+`ANCHOR` ships `"center"`: the form is drawn in the menu's style, but it is a question the player has to answer, so it sits in the middle of the screen rather than where a menu does. The other four are `opx77_menu`'s anchors, for a server that wants the form where the list before it sat. `DIM` ships off, because the menu draws none: the strip is the same panel the menu is, and a scene dimmed behind one and not the other reads as two UIs.
+
+## Architecture
+
+Why the code is written the way it is — load order, the keyboard, validation, the loop — is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). LuaLS stubs for every namespace function live in `std/`, next to `std/types.lua`.
 
 ## Locales
 

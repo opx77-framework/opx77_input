@@ -1,8 +1,12 @@
---- The model: the validated fields, the focused one, and the view.
+--- @author DemiAutomatic
+--- @file client/model.lua
+--- @description The form model: validated fields, the focused one, and the view.
 
 OpxInput = OpxInput or {}
 
---- Mirrors `version` in open77.lua, which no Lua code can read; a release moves both lines.
+--- @author DemiAutomatic
+--- @type {string}
+--- @description Mirror of the manifest version, which Lua cannot read.
 OpxInput.VERSION = '0.1.0'
 
 local Text = OpxInput.Text
@@ -10,33 +14,79 @@ local Text = OpxInput.Text
 OpxInput.Model = {}
 local Model = OpxInput.Model
 
---- How many fields one modal answers. More than this is a list, and a list is what
---- opx77_menu draws.
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Most fields one form answers; more is a menu list.
 local MAX_FIELDS = 8
 
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Most options one choice field carries.
 local MAX_OPTIONS = 64
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Most keys and values a caller's data table may hold.
 local MAX_DATA_NODES = 64
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Deepest nesting a caller's data table may reach.
 local MAX_DATA_DEPTH = 4
 
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest form title or field label, in characters.
 local MAX_LABEL = 96
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest option label, in characters.
 local MAX_OPTION_LABEL = 48
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest string option value, in characters.
 local MAX_OPTION_VALUE = 96
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest text field placeholder, in characters.
 local MAX_PLACEHOLDER = 64
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest form or field description, in characters.
 local MAX_DESCRIPTION = 160
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest slider suffix, in characters.
 local MAX_SUFFIX = 8
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest status line, in characters.
 local MAX_STATUS = 120
 
---- A text field's default and hardest length, in characters. The whole answer rides in
---- one event payload, so the ceiling is a payload bound rather than a taste.
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Text field length when the caller names none, in characters.
 local DEFAULT_TEXT = 96
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Hardest text field length a caller may ask for.
 local MAX_TEXT = 512
 
---- A caller's Lua pattern is run against every keystroke's worth of text, so its own
---- length is bounded too.
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Longest Lua pattern a caller may hand a text field.
 local MAX_PATTERN = 64
 
---- The character classes a text field may name. A caller cannot pass a class of its own:
---- an unbalanced one raises inside `string.match`, and a slow one runs on the tick.
+--- @author DemiAutomatic
+--- @type {table<string, string>}
+--- @description Named character classes a text field may accept.
 local CHARSETS = {
 	alnum = '^[%w]+$',
 	alpha = '^[%a]+$',
@@ -45,75 +95,87 @@ local CHARSETS = {
 	name = "^[%w %-_%.']+$",
 }
 
---- A finite number: not NaN, not an infinity.
----@param value any
----@return boolean
+--- @author DemiAutomatic
+--- @method finite
+--- @description Whether a value is a number that is neither NaN nor infinite.
+--- @param value {any}
+--- @returns {boolean}
 local function finite(value)
-	-- `value == value` is the NaN test: NaN is the one value unequal to itself
 	return type(value) == 'number' and value == value
 		and value > -math.huge and value < math.huge
 end
 
----@param value any
----@param maximum integer
----@return boolean
+--- @author DemiAutomatic
+--- @method validName
+--- @description Whether a value is a bounded identifier of word characters.
+--- @param value {any}
+--- @param maximum {integer}
+--- @returns {boolean}
 local function validName(value, maximum)
 	return type(value) == 'string' and #value > 0 and #value <= maximum
 		and value:match('^[%w_:%-%.]+$') ~= nil
 end
 
---- Display text: control characters out, and refused rather than cut when it runs past
---- `maximum` characters.
----@param value any
----@param maximum integer
----@return string|nil
+--- @author DemiAutomatic
+--- @method displayText
+--- @description Display text with control characters blanked, refused past a character count.
+--- @param value {any}
+--- @param maximum {integer} Characters, not bytes.
+--- @returns {string|nil}
 local function displayText(value, maximum)
 	if type(value) == 'number' then value = tostring(value) end
 	if type(value) ~= 'string' then return nil end
 	value = value:gsub('%c', ' ')
-	-- `#value` counts bytes and `maximum` counts characters: fewer bytes needs no measuring
 	if #value <= maximum then return value end
 	if Text.Span(value, maximum) >= #value then return value end
 	return nil
 end
 
---- The transient line's text, or nil for a value the line refuses. A table would
---- sanitise to nil and silently clear the line, so it is refused rather than cleaned.
----@param value any
----@return string|nil
+--- @author DemiAutomatic
+--- @method OpxInput.Model.StatusText
+--- @description The status line's text, or nil for a value it refuses.
+--- @param value {any}
+--- @returns {string|nil}
 function OpxInput.Model.StatusText(value)
 	return displayText(value, MAX_STATUS)
 end
 
---- Resource-name validator, shared with client/exports.lua.
+--- @author DemiAutomatic
+--- @type {fun(value: any, maximum: integer): boolean}
+--- @description Identifier validator shared with client/exports.lua.
 OpxInput.Model.ValidName = validName
 
---- Does this text sit inside the field's character class? An empty field always does:
---- emptiness is what `required` answers.
----@param entry InputEntry
----@param text string
----@return boolean
+--- @author DemiAutomatic
+--- @method withinCharset
+--- @description Whether text sits inside the field's character class.
+--- @param entry {InputEntry}
+--- @param text {string}
+--- @returns {boolean}
 local function withinCharset(entry, text)
 	if entry.charset == nil or text == '' then return true end
 	local ok, matched = pcall(string.match, text, entry.charset)
 	return ok and matched ~= nil
 end
 
---- Does the whole text match the field's pattern? An empty field always does.
----@param entry InputEntry
----@param text string
----@return boolean
+--- @author DemiAutomatic
+--- @method matchesPattern
+--- @description Whether the whole text matches the field's pattern.
+--- @param entry {InputEntry}
+--- @param text {string}
+--- @returns {boolean}
 local function matchesPattern(entry, text)
 	if entry.pattern == nil or text == '' then return true end
 	local ok, matched = pcall(string.match, text, entry.pattern)
 	return ok and matched ~= nil
 end
 
---- Count a caller's opaque table, refusing rather than truncating.
----@param value any
----@param depth integer
----@param budget table
----@return boolean
+--- @author DemiAutomatic
+--- @method fitsInPayload
+--- @description Counts a caller's opaque table, refusing past the node and depth bounds.
+--- @param value {any}
+--- @param depth {integer}
+--- @param budget {table}
+--- @returns {boolean}
 local function fitsInPayload(value, depth, budget)
 	budget.data = budget.data + 1
 	if budget.data > MAX_DATA_NODES then return false end
@@ -126,8 +188,11 @@ local function fitsInPayload(value, depth, budget)
 	return true
 end
 
----@param slider InputSlider
----@return InputSlider|nil, string|nil
+--- @author DemiAutomatic
+--- @method normalizeSlider
+--- @description Validates a slider and fills its defaults, clamping the start value.
+--- @param slider {InputSlider}
+--- @returns {InputSlider|nil, string|nil}
 local function normalizeSlider(slider)
 	if type(slider) ~= 'table' then return nil, 'invalid_slider' end
 	local minimum = finite(slider.min) and slider.min + 0.0 or 0.0
@@ -146,11 +211,12 @@ local function normalizeSlider(slider)
 	return { min = minimum, max = maximum, step = step, value = value, suffix = suffix }
 end
 
---- The value an option answers with. Kept exactly as the caller wrote it: it is the
---- caller's own datum coming back, not something a player reads.
----@param option table
----@param label string
----@return string|number|nil
+--- @author DemiAutomatic
+--- @method optionValue
+--- @description The value an option answers with, kept exactly as written.
+--- @param option {table}
+--- @param label {string}
+--- @returns {string|number|nil}
 local function optionValue(option, label)
 	local value = option.value
 	if value == nil then return label end
@@ -163,8 +229,11 @@ local function optionValue(option, label)
 	return nil
 end
 
----@param field InputField
----@return table|nil, string|nil
+--- @author DemiAutomatic
+--- @method normalizeOptions
+--- @description Validates a choice field's options and its starting selection.
+--- @param field {InputField}
+--- @returns {table|nil, string|nil}
 local function normalizeOptions(field)
 	local raw = field.options
 	if type(raw) ~= 'table' then return nil, 'invalid_options' end
@@ -175,7 +244,6 @@ local function normalizeOptions(field)
 	local options = {}
 	for index = 1, total do
 		local option = raw[index]
-		-- A bare string is the common case: the label is the value.
 		if type(option) == 'string' or type(option) == 'number' then
 			option = { label = option }
 		end
@@ -198,9 +266,11 @@ local function normalizeOptions(field)
 	return { options = options, selected = selected }
 end
 
---- Everything a text field carries beyond the fields every kind has.
----@param field InputField
----@return table|nil, string|nil
+--- @author DemiAutomatic
+--- @method normalizeTyped
+--- @description Validates what a text field carries beyond the common fields.
+--- @param field {InputField}
+--- @returns {table|nil, string|nil}
 local function normalizeTyped(field)
 	local maxLength = DEFAULT_TEXT
 	if field.maxLength ~= nil then
@@ -230,7 +300,6 @@ local function normalizeTyped(field)
 		if type(given) ~= 'string' or #given == 0 or #given > MAX_PATTERN then
 			return nil, 'invalid_pattern'
 		end
-		-- Compiled by trying it: a malformed class raises rather than answering nil.
 		if not pcall(string.match, '', given) then return nil, 'invalid_pattern' end
 		pattern = given
 	end
@@ -251,10 +320,12 @@ local function normalizeTyped(field)
 	}
 end
 
---- Normalise one field. The kind comes from the shape, never from a declaration.
----@param field InputField
----@param index integer
----@return InputEntry|nil, string|nil
+--- @author DemiAutomatic
+--- @method normalizeField
+--- @description Validates one field, deriving its kind from its shape.
+--- @param field {InputField}
+--- @param index {integer}
+--- @returns {InputEntry|nil, string|nil}
 local function normalizeField(field, index)
 	if type(field) ~= 'table' then return nil, 'field_must_be_a_table' end
 
@@ -302,14 +373,16 @@ local function normalizeField(field, index)
 	entry.pattern = typed.pattern
 	entry.charset = typed.charset
 	entry.required = typed.required
-	-- An initial value its own field would refuse is a caller's bug, not a player's.
 	if not withinCharset(entry, entry.text) then return nil, 'invalid_value' end
 	if not matchesPattern(entry, entry.text) then return nil, 'invalid_value' end
 	return entry
 end
 
----@param fields InputField[]
----@return InputEntry[]|nil, string|nil
+--- @author DemiAutomatic
+--- @method normalizeFields
+--- @description Validates every field of a spec, refusing duplicate ids.
+--- @param fields {InputField[]}
+--- @returns {InputEntry[]|nil, string|nil}
 local function normalizeFields(fields)
 	if type(fields) ~= 'table' then return nil, 'fields_must_be_a_table' end
 	local total = #fields
@@ -320,7 +393,6 @@ local function normalizeFields(fields)
 	for index = 1, total do
 		local entry, reason = normalizeField(fields[index], index)
 		if entry == nil then return nil, reason end
-		-- The answer is keyed by id, so two fields sharing one would lose an answer.
 		if seen[entry.id] then return nil, 'duplicate_field_id' end
 		seen[entry.id] = true
 		list[index] = entry
@@ -328,10 +400,12 @@ local function normalizeFields(fields)
 	return list
 end
 
---- Which field is focused first: the one a caller named, or the first.
----@param fields InputEntry[]
----@param wanted InputCursor|nil
----@return integer
+--- @author DemiAutomatic
+--- @method cursorIndex
+--- @description Resolves the first focused field, falling back to field one.
+--- @param fields {InputEntry[]}
+--- @param wanted {InputCursor|nil}
+--- @returns {integer}
 local function cursorIndex(fields, wanted)
 	if type(wanted) == 'string' then
 		for index = 1, #fields do
@@ -344,11 +418,13 @@ local function cursorIndex(fields, wanted)
 	return 1
 end
 
---- Build a form from a caller's spec.
----@param owner string
----@param generation integer
----@param spec InputSpec
----@return InputRecord|nil, string|nil  the record, or nil and a reason
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Build
+--- @description Builds a form record from a spec, whole or not at all.
+--- @param owner {string}
+--- @param generation {integer}
+--- @param spec {InputSpec}
+--- @returns {InputRecord|nil, string|nil}
 function OpxInput.Model.Build(owner, generation, spec)
 	if not validName(owner, 64) then return nil, 'invalid_owner' end
 	if type(spec) ~= 'table' then return nil, 'spec_must_be_a_table' end
@@ -398,17 +474,21 @@ function OpxInput.Model.Build(owner, generation, spec)
 	}
 end
 
---- The focused field.
----@param record InputRecord
----@return InputEntry|nil
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Entry
+--- @description Answers the focused field of a form.
+--- @param record {InputRecord}
+--- @returns {InputEntry|nil}
 function OpxInput.Model.Entry(record)
 	return record.fields[record.index]
 end
 
---- Move the focus between fields. Wraps.
----@param record InputRecord
----@param delta integer
----@return boolean  true when the focus moved
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Move
+--- @description Moves the focus between fields, wrapping at both ends.
+--- @param record {InputRecord}
+--- @param delta {integer}
+--- @returns {boolean}
 function OpxInput.Model.Move(record, delta)
 	local total = #record.fields
 	if total <= 1 then return false end
@@ -416,10 +496,12 @@ function OpxInput.Model.Move(record, delta)
 	return true
 end
 
---- LEFT/RIGHT on a choice or a slider.
----@param entry InputEntry|nil
----@param delta integer
----@return boolean  true when something changed
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Adjust
+--- @description Cycles a choice or steps a slider, answering whether it changed.
+--- @param entry {InputEntry|nil}
+--- @param delta {integer}
+--- @returns {boolean}
 function OpxInput.Model.Adjust(entry, delta)
 	if entry == nil then return false end
 	local kind = entry.kind
@@ -432,10 +514,8 @@ function OpxInput.Model.Adjust(entry, delta)
 		local slider = entry.slider
 		local before = slider.value
 		local value = slider.value + (slider.step * delta)
-		-- Clamped, not wrapped: a volume that jumps from 0 to 100 is a complaint.
 		if value < slider.min then value = slider.min end
 		if value > slider.max then value = slider.max end
-		-- Snapped to the grid: 0.1 added ten times is not 1.0.
 		local steps = math.floor(((value - slider.min) / slider.step) + 0.5)
 		value = slider.min + (steps * slider.step)
 		if value > slider.max then value = slider.max end
@@ -445,13 +525,12 @@ function OpxInput.Model.Adjust(entry, delta)
 	return false
 end
 
---- Take a candidate buffer from the page. Every limit refuses: the accepted buffer stays
---- as it was and the page is told to put it back.
----@param entry InputEntry|nil
----@param text any
----@return boolean redraw  the page is showing something other than the accepted buffer
----@return string|nil refusal  a locale key when a limit refused the candidate
----@return table|nil params
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Edit
+--- @description Accepts or refuses a candidate text buffer reported by the page.
+--- @param entry {InputEntry|nil}
+--- @param text {any}
+--- @returns {boolean, string|nil, table|nil}
 function OpxInput.Model.Edit(entry, text)
 	if entry == nil or entry.kind ~= 'text' then return false end
 	if type(text) ~= 'string' then return false end
@@ -464,15 +543,14 @@ function OpxInput.Model.Edit(entry, text)
 	end
 	local moved = clean ~= entry.text
 	entry.text = clean
-	-- Redrawn even where the accepted buffer did not move: the page is showing the raw
-	-- keystrokes, which may have carried a control character.
 	return moved or clean ~= text
 end
 
---- The first field that refuses to be submitted, if any.
----@param record InputRecord
----@return integer|nil index
----@return string|nil refusal  a locale key
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Check
+--- @description Finds the first field that refuses to be submitted.
+--- @param record {InputRecord}
+--- @returns {integer|nil, string|nil}
 function OpxInput.Model.Check(record)
 	for index = 1, #record.fields do
 		local entry = record.fields[index]
@@ -488,9 +566,11 @@ function OpxInput.Model.Check(record)
 	return nil
 end
 
---- The machine-readable value of one field, for the answer.
----@param entry InputEntry
----@return string|number
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Raw
+--- @description The machine-readable value one field answers with.
+--- @param entry {InputEntry}
+--- @returns {string|number}
 function OpxInput.Model.Raw(entry)
 	local kind = entry.kind
 	if kind == 'choice' then return entry.options[entry.selected].value end
@@ -498,16 +578,17 @@ function OpxInput.Model.Raw(entry)
 	return entry.text
 end
 
---- The rendered value of one field, for the page.
----@param entry InputEntry
----@return string
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Value
+--- @description The rendered value of one field, for the page.
+--- @param entry {InputEntry}
+--- @returns {string}
 function OpxInput.Model.Value(entry)
 	local kind = entry.kind
 	if kind == 'choice' then return entry.options[entry.selected].label end
 	if kind == 'slider' then
 		local slider = entry.slider
 		local number = slider.value
-		-- Whole values print without a decimal: "VOLUME 70.0%" reads as a bug.
 		local text = number % 1 == 0 and tostring(math.floor(number))
 			or string.format('%.2f', number)
 		return text .. slider.suffix
@@ -515,9 +596,11 @@ function OpxInput.Model.Value(entry)
 	return entry.text
 end
 
---- Every answer, keyed by field id.
----@param record InputRecord
----@return table<string, string|number>
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Values
+--- @description Every field's answer, keyed by field id.
+--- @param record {InputRecord}
+--- @returns {table<string, string|number>}
 function OpxInput.Model.Values(record)
 	local values = {}
 	for index = 1, #record.fields do
@@ -527,9 +610,11 @@ function OpxInput.Model.Values(record)
 	return values
 end
 
---- The key line under the fields, in the configured language.
----@param record InputRecord
----@return string
+--- @author DemiAutomatic
+--- @method keyHint
+--- @description Builds the translated key line for the focused field.
+--- @param record {InputRecord}
+--- @returns {string}
 local function keyHint(record)
 	local entry = record.fields[record.index]
 	local parts = {}
@@ -543,9 +628,11 @@ local function keyHint(record)
 	return table.concat(parts, '  ·  ')
 end
 
---- Everything the page needs for one frame.
----@param record InputRecord
----@return InputView
+--- @author DemiAutomatic
+--- @method OpxInput.Model.View
+--- @description Builds everything the page needs to draw one frame.
+--- @param record {InputRecord}
+--- @returns {InputView}
 function OpxInput.Model.View(record)
 	local rows = {}
 	for index = 1, #record.fields do
@@ -555,7 +642,6 @@ function OpxInput.Model.View(record)
 			id = entry.id,
 			kind = kind,
 			label = entry.label,
-			-- nil rather than false: an absent field costs no value node.
 			spin = (kind ~= 'text') or nil,
 			on = (index == record.index) or nil,
 		}
@@ -568,7 +654,6 @@ function OpxInput.Model.View(record)
 		end
 		if kind == 'slider' then
 			local slider = entry.slider
-			-- The range is non-empty: normalizeSlider refuses `max <= min`.
 			row.fill = (slider.value - slider.min) / (slider.max - slider.min)
 		end
 		rows[index] = row
@@ -581,16 +666,17 @@ function OpxInput.Model.View(record)
 		rows = rows,
 		hint = focused and focused.description or nil,
 		keys = keyHint(record),
-		-- Only the failure flag crosses: `a and a.ok or nil` would collapse a false.
 		status = record.status and record.status.text or nil,
 		statusBad = record.status ~= nil and not record.status.ok or nil,
 	}
 end
 
---- The one payload a form answers with.
----@param record InputRecord
----@param action InputAction
----@return InputPayload
+--- @author DemiAutomatic
+--- @method OpxInput.Model.Payload
+--- @description Builds the one payload a form answers with.
+--- @param record {InputRecord}
+--- @param action {InputAction}
+--- @returns {InputPayload}
 function OpxInput.Model.Payload(record, action)
 	return {
 		form = record.id,

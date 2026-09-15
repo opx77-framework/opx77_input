@@ -1,21 +1,26 @@
---- The public export surface. Every call answers an InputResponse and never raises; `error`
---- is one of the codes in types.lua. Client-side only: called from a caller's client half.
+--- @author DemiAutomatic
+--- @file client/exports.lua
+--- @description The four client exports, each answering an InputResponse.
 
 local Runtime = OpxInput.Runtime
 local Model = OpxInput.Model
 
----@param ok boolean
----@param values table|nil
----@return InputResponse
+--- @author DemiAutomatic
+--- @method response
+--- @description Stamps the ok flag on an answer table.
+--- @param ok {boolean}
+--- @param values {table|nil}
+--- @returns {InputResponse}
 local function response(ok, values)
 	values = values or {}
 	values.ok = ok == true
 	return values
 end
 
---- Who is calling, and at which generation of their code, both from the host.
----@return string|nil owner
----@return string|integer generation  the refusal reason when owner is nil
+--- @author DemiAutomatic
+--- @method caller
+--- @description Reads the invoking resource and its generation from the host.
+--- @returns {string|nil, string|integer}
 local function caller()
 	local owner = GetInvokingResource()
 	local generation = GetInvokingResourceGeneration()
@@ -25,8 +30,10 @@ local function caller()
 	return owner, generation
 end
 
---- Refuse everything when the WebUI surface never came up.
----@return InputResponse|nil
+--- @author DemiAutomatic
+--- @method unavailable
+--- @description Refuses every call when the WebUI surface never came up.
+--- @returns {InputResponse|nil}
 local function unavailable()
 	if Runtime.Unavailable and Runtime.Unavailable() then
 		return response(false, { error = 'no_surface' })
@@ -34,19 +41,22 @@ local function unavailable()
 	return nil
 end
 
---- Refuse unless the open form belongs to the caller.
----@param owner string
----@return InputResponse|nil
+--- @author DemiAutomatic
+--- @method notMine
+--- @description Refuses unless the open form belongs to the caller.
+--- @param owner {string}
+--- @returns {InputResponse|nil}
 local function notMine(owner)
 	if Runtime.Owner() == nil then return response(false, { error = 'no_form_open' }) end
 	if Runtime.Owner() ~= owner then return response(false, { error = 'not_owner' }) end
 	return nil
 end
 
---- Ask the player for one or more values. Refused whole if any field is malformed;
---- `error` names why. The answer arrives on `spec.event`, and on `opx77:input` beside it.
----@param spec InputSpec
----@return InputOpened  `error` is "input_busy" when another resource owns the open form
+--- @author DemiAutomatic
+--- @export open
+--- @description Asks the player for one or more values in one form.
+--- @param spec {InputSpec}
+--- @returns {InputOpened}
 exports('open', function(spec)
 	local gone = unavailable()
 	if gone then return gone end
@@ -63,10 +73,11 @@ exports('open', function(spec)
 	})
 end)
 
---- Take your own form back down. A caller may not close another resource's, and the form
---- still answers: `action` is "cancel", `reason` is "caller".
----@param handle InputHandle|nil
----@return InputResponse  "not_owner" unless the open form belongs to the caller
+--- @author DemiAutomatic
+--- @export close
+--- @description Takes the caller's own form down, answering it as cancelled.
+--- @param handle {InputHandle|nil}
+--- @returns {InputResponse}
 exports('close', function(handle)
 	local gone = unavailable()
 	if gone then return gone end
@@ -80,9 +91,10 @@ exports('close', function(handle)
 	return response(true, {})
 end)
 
---- Whether a form is open and whether it is yours. It reports where the player is, never
---- what they have typed: the answer is the event.
----@return InputState
+--- @author DemiAutomatic
+--- @export state
+--- @description Reports whether a form is open and whether it is the caller's.
+--- @returns {InputState}
 exports('state', function()
 	local owner = caller()
 	local snapshot = Runtime.Snapshot()
@@ -97,10 +109,12 @@ exports('state', function()
 	return snapshot
 end)
 
---- Write the transient line under the fields; `setStatus(nil)` clears it now.
----@param text string|nil  cleared automatically after six seconds
----@param ok boolean|nil  false marks a failure, which changes its colour
----@return InputResponse  "not_owner" unless the open form belongs to the caller
+--- @author DemiAutomatic
+--- @export setStatus
+--- @description Writes or clears the transient line under the caller's fields.
+--- @param text {string|nil}
+--- @param ok {boolean|nil} False marks a failure.
+--- @returns {InputResponse}
 exports('setStatus', function(text, ok)
 	local gone = unavailable()
 	if gone then return gone end
