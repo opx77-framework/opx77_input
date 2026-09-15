@@ -3,6 +3,17 @@
 
 ---@alias InputHandle integer  unique for the life of the client session
 ---@alias InputAction "submit"|"cancel"
+
+--- Why a form was cancelled, on the `cancel` payload.
+---@alias InputCancelReason
+---| "escape"          the page reported Escape
+---| "pause"           the platform's pause key
+---| "caller"          the owner's own `close`
+---| "reopened"        the owner opened another form over it
+---| "owner_reloaded"  the owner reloaded
+---| "owner_stopped"   the owner stopped
+---| "input_stopped"   this resource stopped
+---| "player_down"     opx77_medic says the player is down, and the owner is not in `WHILE_DOWN`
 ---@alias InputKind
 ---| "text"    a typed line
 ---| "choice"  one of an ordered list; LEFT/RIGHT cycle it
@@ -67,7 +78,7 @@
 ---@field handle InputHandle
 ---@field owner string          the resource that opened it
 ---@field action InputAction
----@field reason string|nil     why it was cancelled; on `cancel` only
+---@field reason InputCancelReason|nil  why it was cancelled; on `cancel` only
 ---@field values table<string, string|number>|nil  field id -> answer; on `submit` only
 ---@field data table|nil        the spec's `data`, echoed untouched
 
@@ -105,6 +116,7 @@
 ---@field placeholder string|nil
 ---@field maxLength integer|nil
 ---@field pattern string|nil
+---@field patternFailed boolean|nil true once the pattern raised and was logged
 ---@field charset string|nil       the Lua character class the field accepts
 ---@field required boolean|nil
 ---@field options InputOption[]|nil

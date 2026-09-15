@@ -1,13 +1,16 @@
---- Configuration for opx77_input: where the form sits, how wide it is, and what it dims.
+--- @author DemiAutomatic
+--- @file config.lua
+--- @description Operator configuration: language, form anchor, strip width and scrim.
+--- @field LOCALE {string} Catalogue code in locales/ player-facing text is read from.
+--- @field ANCHOR {string} center, top-left, top-right, left or right; unknown means center.
+--- @field WIDTH {integer} Strip width in pixels on the 1920-wide surface.
+--- @field DIM {boolean} Dim the scene behind an open form.
+--- @field WHILE_DOWN {table<string, boolean>} Resources whose forms still open while the player is down.
 
 OPX_INPUT_CONFIG = {
-  LOCALE = "en",
-  -- "top-left" | "top-right" | "left" | "right", as opx77_menu's ANCHOR; the last two are
-  -- mid-height. Keep both resources on the same value: a form usually follows a menu, and
-  -- it is drawn as that menu's strip. Anything unrecognised falls back to "top-left".
-  ANCHOR = "top-left",
-  WIDTH = 340, -- strip width in pixels, at a 1920-wide surface; opx77_menu's WIDTH
-  -- A scrim behind the form. Off, as opx77_menu draws none: the strip is the same panel
-  -- the menu is, and a scene dimmed behind one and not the other reads as two UIs.
-  DIM = false,
+	LOCALE = 'en',
+	ANCHOR = 'center',
+	WIDTH = 340,
+	DIM = false,
+	WHILE_DOWN = { opx77_admin = true },
 }

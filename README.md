@@ -17,12 +17,13 @@ A value-asking service for **Opx77**. One resource owns the modal; every other r
 - Every limit a refusal, never a truncation, and the refusal names itself
 - One form at a time, keyed on the resource that opened it
 - Takes the keyboard for exactly as long as a form is open, and never longer
+- No form while `opx77_medic` says the player is down, except the resources `config.lua` lets through
 - Its own `en`/`fr` catalogue for the lines it owns
 - Drawn as `opx77_menu`'s strip, so a menu and the form it leads to read as one UI
 
 ## Look and keys
 
-The form is drawn exactly as `opx77_menu` draws a menu, and its stylesheet carries the menu's values: the same anchor and width, a title plate with the yellow rule, and one cut plate per field — label on the left, value on the right, `‹›` beside a value that LEFT and RIGHT change. The focused field is the menu's cursor row: it slides out of the column in yellow. A text field's typed line sits where a menu row's value does, and grows with what it holds. The form's description, the focused field's description, the status line (red on a refusal) and the key line each follow as their own plate underneath.
+The form is drawn exactly as `opx77_menu` draws a menu, and its stylesheet carries the menu's values: the same width, a title plate with the yellow rule, and one cut plate per field — label on the left, value on the right, `‹›` beside a value that LEFT and RIGHT change. The focused field is the menu's cursor row: it slides out of the column in yellow. A text field's typed line sits where a menu row's value does, and grows with what it holds. The form's description, the focused field's description, the status line (red on a refusal) and the key line each follow as their own plate underneath.
 
 The arrows and ENTER mean what they mean in the menu: UP and DOWN move between fields, LEFT and RIGHT change a choice or a slider (on a text field they move the caret), ENTER submits. ESCAPE cancels. BACKSPACE, the menu's way back, belongs to the text fields here.
 
@@ -43,7 +44,7 @@ The exports are client-side only: a server resource calls them from its own clie
 | `state` | whether a form is open and whether it is yours |
 | `setStatus` | write the transient line under the fields |
 
-Every export answers `{ ok = boolean, error = string|nil }` and never raises; `error` is a stable code, never player-facing text. `open` adds `handle`, `id` and `fields`, how many it built. Types for every spec, payload and response are in `types.lua`.
+Every export answers `{ ok = boolean, error = string|nil }` and never raises; `error` is a stable code, never player-facing text. `open` adds `handle`, `id` and `fields`, how many it built. Types for every spec, payload and response are in `std/types.lua`.
 
 There is no `update`. A form is answered in seconds, and rebuilding one under the player would throw away what they have already typed; a caller that needs different fields closes and opens again.
 
@@ -75,6 +76,7 @@ A field's kind comes from its shape, never from a declaration: `options` makes a
 - `state` reports only `open` and `mine` for a form you do not own. It never reports what the player has typed: the answer is the event, and there is no second way to read it.
 - `open` answers `keyboard_busy` when another surface already holds the keyboard — chat's composer, the pause menu — and `no_keyboard` when the host refuses to give it to this one.
 - The form cancels itself when its owner stops or reloads, within a second.
+- No form is open while the player is down. The form listens to `opx77:medic:stateChanged`, the client local event `opx77_medic` raises with `{ down, waiting }`, and asks that resource's `isDown` export once on start. Going down cancels the open form with `reason = "player_down"`, handing the keyboard back; until the player is up, `open` answers `player_down`, ahead of `input_busy` and `keyboard_busy`. A resource listed in `WHILE_DOWN` in `config.lua` is the exception: its form still opens and stays open. Getting up reopens nothing: the caller asks again. Any resource can raise that event name, so it only ever cancels and refuses.
 - The status line clears itself after six seconds; `setStatus(nil)` clears it now.
 
 ### Limits
@@ -97,7 +99,7 @@ Eight fields is the point where a form stops being a question and becomes a list
 ### What a text field refuses, and when
 
 - **Length and character class are refused as they are typed.** The accepted buffer does not grow, the page is told to put it back, and a line under the fields says why. `charset` is one of `alnum`, `alpha`, `digits`, `hex` or `name` — a fixed table, because a caller's own character class can be malformed or slow and it would be run against every keystroke.
-- **`required` and `pattern` are checked on ENTER.** The focus moves to the field that refused and the same line says why. `pattern` is a Lua pattern the whole answer must match; an empty field passes it, because emptiness is what `required` answers.
+- **`required` and `pattern` are checked on ENTER.** The focus moves to the field that refused and the same line says why. `pattern` is a Lua pattern the whole answer must match — it is anchored at both ends for you, so `%d+` and `^%d+$` mean the same; an empty field passes it, because emptiness is what `required` answers.
 
 ## Events
 
@@ -110,7 +112,7 @@ AddEventHandler("garage:plateAnswered", function(payload)
 end)
 ```
 
-`action` is `submit` or `cancel`. `values` is present on a submit only, keyed by field id — a field's `id` is the caller's own handle on it, which is why there is no per-field `data` to echo. The form's `data` comes back untouched on both. On a cancel, `reason` says which of these it was: `escape`, `pause`, `caller`, `reopened`, `owner_reloaded`, `owner_stopped` or `input_stopped`.
+`action` is `submit` or `cancel`. `values` is present on a submit only, keyed by field id — a field's `id` is the caller's own handle on it, which is why there is no per-field `data` to echo. The form's `data` comes back untouched on both. On a cancel, `reason` says which of these it was: `escape`, `pause`, `caller`, `reopened`, `owner_reloaded`, `owner_stopped`, `input_stopped` or `player_down` (`InputCancelReason` in `std/types.lua`).
 
 Escape always cancels. So does the platform's own pause key, which is raised even where the page never sees the keystroke — that is the backstop that stops a broken page from stranding a player in a modal they cannot leave.
 
@@ -118,7 +120,21 @@ A slider answers a number, and it is a float even where it renders whole: `40` c
 
 ## Configuration
 
-`config.lua`. Language, anchor, strip width, and whether the scene behind it is dimmed. `ANCHOR` and `WIDTH` take the same values as `opx77_menu`'s and ship with the same defaults; keep the two resources on the same ones. `DIM` ships off, because the menu draws no scrim.
+`config.lua`. Language, anchor, strip width, whether the scene behind it is dimmed, and which resources' forms still work while the player is down.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `LOCALE` | `"en"` | The catalogue in `locales/` the lines this resource owns are read from. An unknown code falls back to `en`. |
+| `ANCHOR` | `"center"` | Where the form sits: `"center"`, `"top-left"`, `"top-right"`, `"left"` or `"right"`. The last two are mid-height. Anything unrecognised falls back to `"center"`. |
+| `WIDTH` | `340` | Strip width in pixels, at the 1920-wide surface. Same value and default as `opx77_menu`'s `WIDTH`. |
+| `DIM` | `false` | Draw a scrim behind the open form. |
+| `WHILE_DOWN` | `{ opx77_admin = true }` | Resources whose forms still open, and stay open, while `opx77_medic` says the player is down; every other owner's form is cancelled and refused. The staff tool is listed so its menu's forms — a kick reason, a revive target — still work for a downed staff member. A name maps to `true`; anything else, or a missing table, lets no form through. |
+
+`ANCHOR` ships `"center"`: the form is drawn in the menu's style, but it is a question the player has to answer, so it sits in the middle of the screen rather than where a menu does. The other four are `opx77_menu`'s anchors, for a server that wants the form where the list before it sat. `DIM` ships off, because the menu draws none: the strip is the same panel the menu is, and a scene dimmed behind one and not the other reads as two UIs.
+
+## Architecture
+
+Why the code is written the way it is — load order, the keyboard, validation, the loop, the player down — is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). LuaLS stubs for every namespace function live in `std/`, next to `std/types.lua`.
 
 ## Locales
 

@@ -52,7 +52,6 @@
   }
 
   var elements = {
-    scrim: document.getElementById("scrim"),
     strip: document.getElementById("strip"),
     title: document.getElementById("title"),
     note: document.getElementById("note"),
@@ -72,8 +71,10 @@
     Escape: "escape"
   };
 
-  // The same four anchors as opx77_menu, so a form can sit where the list before it sat.
+  // The middle of the screen, which is where a form ships, and opx77_menu's four anchors for
+  // a server that wants the form where the list before it sat.
   var ANCHORS = {
+    "center": "anchor-center",
     "top-left": "anchor-top-left",
     "top-right": "anchor-top-right",
     "left": "anchor-left",
@@ -87,7 +88,7 @@
   function applyConfig(payload) {
     payload = payload || {};
 
-    var anchor = ANCHORS[text(payload.anchor)] || ANCHORS["top-left"];
+    var anchor = ANCHORS[text(payload.anchor)] || ANCHORS["center"];
     elements.strip.className = "strip " + anchor;
 
     var width = Number(payload.width);
