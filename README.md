@@ -43,7 +43,7 @@ The exports are client-side only: a server resource calls them from its own clie
 | `state` | whether a form is open and whether it is yours |
 | `setStatus` | write the transient line under the fields |
 
-Every export answers `{ ok = boolean, error = string|nil }` and never raises; `error` is a stable code, never player-facing text. `open` adds `handle`, `id` and `fields`, how many it built. Types for every spec, payload and response are in `types.lua`.
+Every export answers `{ ok = boolean, error = string|nil }` and never raises; `error` is a stable code, never player-facing text. `open` adds `handle`, `id` and `fields`, how many it built. Types for every spec, payload and response are in `std/types.lua`.
 
 There is no `update`. A form is answered in seconds, and rebuilding one under the player would throw away what they have already typed; a caller that needs different fields closes and opens again.
 
