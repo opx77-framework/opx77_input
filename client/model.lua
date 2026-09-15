@@ -2,8 +2,6 @@
 --- @file client/model.lua
 --- @description The form model: validated fields, the focused one, and the view.
 
-OpxInput = OpxInput or {}
-
 local Text = OpxInput.Text
 
 OpxInput.Model = {}
@@ -421,9 +419,6 @@ end
 --- @param spec {InputSpec}
 --- @returns {InputRecord|nil, string|nil}
 function OpxInput.Model.Build(owner, generation, spec)
-	if not validName(owner, 64) then return nil, 'invalid_owner' end
-	if type(spec) ~= 'table' then return nil, 'spec_must_be_a_table' end
-
 	local id = spec.id
 	if id == nil then
 		id = owner

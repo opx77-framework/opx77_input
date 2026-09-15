@@ -70,7 +70,8 @@ veut dire que le code qui a ouvert le formulaire n'existe plus, et le formulaire
 
 `OpxInput.Model.Build` construit le formulaire **en entier ou pas du tout** : chaque borne est un
 refus avec un code, rien n'est coupé en silence, et rien de ce que l'appelant envoie ne revient
-plus court.
+plus court. Le nom de l'appelant et le type de la spec sont vérifiés une seule fois, par l'export
+`open`, avant d'arriver ici.
 
 - **Le genre d'un champ vient de sa forme**, jamais d'une déclaration : `options` fait un choix,
   `slider` un curseur, le reste un champ texte.
@@ -257,9 +258,6 @@ possède (la ligne de touches, les quatre refus) sont traduites.
 
 ## Limites connues
 
-- `unavailable()` (`client/exports.lua`) teste la présence de `Runtime.Unavailable`, qui est
-  toujours définie ; `OpxInput.Model.Build` revérifie le nom du propriétaire et le type de la spec
-  que les exports ont déjà vérifiés.
 - Un `open` avec `status` envoie deux fois la même frame : `OpxInput.Runtime.SetStatus` dessine,
   puis `OpxInput.Runtime.Open` dessine encore.
 - `pattern` est documenté comme devant correspondre à la réponse **entière**, mais

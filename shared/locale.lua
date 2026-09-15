@@ -2,8 +2,6 @@
 --- @file shared/locale.lua
 --- @description Locale catalogues, lookup with fallback and the global locale shorthand.
 
-OpxInput = OpxInput or {}
-
 --- @author DemiAutomatic
 --- @type {table<string, table<string, string>>}
 --- @description Registered catalogues, keyed by language code then key.

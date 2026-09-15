@@ -9,11 +9,10 @@ local Model = OpxInput.Model
 --- @method response
 --- @description Stamps the ok flag on an answer table.
 --- @param ok {boolean}
---- @param values {table|nil}
+--- @param values {table}
 --- @returns {InputResponse}
 local function response(ok, values)
-	values = values or {}
-	values.ok = ok == true
+	values.ok = ok
 	return values
 end
 
@@ -35,7 +34,7 @@ end
 --- @description Refuses every call when the WebUI surface never came up.
 --- @returns {InputResponse|nil}
 local function unavailable()
-	if Runtime.Unavailable and Runtime.Unavailable() then
+	if Runtime.Unavailable() then
 		return response(false, { error = 'no_surface' })
 	end
 	return nil
@@ -47,8 +46,9 @@ end
 --- @param owner {string}
 --- @returns {InputResponse|nil}
 local function notMine(owner)
-	if Runtime.Owner() == nil then return response(false, { error = 'no_form_open' }) end
-	if Runtime.Owner() ~= owner then return response(false, { error = 'not_owner' }) end
+	local current = Runtime.Owner()
+	if current == nil then return response(false, { error = 'no_form_open' }) end
+	if current ~= owner then return response(false, { error = 'not_owner' }) end
 	return nil
 end
 

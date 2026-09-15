@@ -2,8 +2,6 @@
 --- @file client/input.lua
 --- @description The keyboard: who holds it, taken only while a form is open.
 
-OpxInput = OpxInput or {}
-
 OpxInput.Input = {}
 
 --- @author DemiAutomatic
@@ -25,20 +23,12 @@ local ACTIONS = {
 }
 
 --- @author DemiAutomatic
---- @method api
---- @description Answers the host's Open77.input table when it exists.
---- @returns {table|nil}
-local function api()
-	return type(Open77) == 'table' and type(Open77.input) == 'table' and Open77.input or nil
-end
-
---- @author DemiAutomatic
 --- @method OpxInput.Input.Attach
 --- @description Resolves and probes the host's keyboard reader at resource start.
 --- @returns {boolean, string|nil}
 function OpxInput.Input.Attach()
-	local input = api()
-	isCaptured = input ~= nil and type(input.isCaptured) == 'function' and input.isCaptured or nil
+	local input = Open77.input
+	isCaptured = type(input) == 'table' and type(input.isCaptured) == 'function' and input.isCaptured or nil
 	if isCaptured == nil then
 		return false, 'no_is_captured -- the manifest must grant input.actions'
 	end

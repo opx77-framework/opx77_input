@@ -2,8 +2,6 @@
 --- @file client/main.lua
 --- @description The surface, the one open form, and the answer it raises.
 
-OpxInput = OpxInput or {}
-
 local Config = OPX_INPUT_CONFIG
 local Model = OpxInput.Model
 local Input = OpxInput.Input
@@ -147,7 +145,7 @@ local function finish(action, reason)
 	Input.Release(page)
 	draw()
 	local payload = Model.Payload(answered, action)
-	if action == 'cancel' then payload.reason = reason or 'closed' end
+	if action == 'cancel' then payload.reason = reason end
 	local event = answered.event
 	if event then TriggerEvent(event, payload) end
 	if GLOBAL_EVENT ~= event then TriggerEvent(GLOBAL_EVENT, payload) end
