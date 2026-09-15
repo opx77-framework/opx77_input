@@ -14,15 +14,6 @@ function OpxInput.Locale.register(code, strings) end
 ---@return boolean applied
 function OpxInput.Locale.Set(code) end
 
---- The language code currently selected.
----@return string
-function OpxInput.Locale.Current() end
-
---- Whether the active catalogue or the en fallback defines `key`.
----@param key string
----@return boolean
-function OpxInput.Locale.Exists(key) end
-
 --- Resolves a key through the active catalogue, then en, then the key itself. Never nil.
 --- A placeholder without a value in `params` is left as written.
 ---@param key string

@@ -1,11 +1,10 @@
 --- @author DemiAutomatic
 --- @file shared/text.lua
---- @description UTF-8 aware text measuring and cleaning helpers.
+--- @description UTF-8 aware measuring of text in characters.
 
 OpxInput = OpxInput or {}
 
 OpxInput.Text = {}
-local Text = OpxInput.Text
 
 --- @author DemiAutomatic
 --- @method OpxInput.Text.Span
@@ -27,22 +26,4 @@ function OpxInput.Text.Span(text, maximum)
 		index = index + 1
 	end
 	return size
-end
-
---- @author DemiAutomatic
---- @method OpxInput.Text.Clean
---- @description Display text with control characters blanked, cut to a character count.
---- @param value {any}
---- @param maximum {integer} Characters, not bytes.
---- @param ellipsis {string|nil}
---- @returns {string|nil}
-function OpxInput.Text.Clean(value, maximum, ellipsis)
-	if value == nil then return nil end
-	if type(value) == 'number' then value = tostring(value) end
-	if type(value) ~= 'string' then return nil end
-	value = value:gsub('[%c]', ' ')
-	if #value <= maximum then return value end
-	local cut = Text.Span(value, maximum)
-	if cut >= #value then return value end
-	return value:sub(1, cut) .. (ellipsis or '')
 end

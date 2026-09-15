@@ -256,8 +256,6 @@ possède (la ligne de touches, les quatre refus) sont traduites.
 
 ## Limites connues
 
-- `OpxInput.Text.Clean`, `OpxInput.Locale.Current` et `OpxInput.Locale.Exists` ne sont appelés
-  par aucun code, ni dans cette resource ni ailleurs.
 - `OpxInput.VERSION` n'est lu par personne, et `Open77.resource.version()` lit déjà la directive
   `version` du manifeste.
 - `unavailable()` (`client/exports.lua`) teste la présence de `Runtime.Unavailable`, qui est
