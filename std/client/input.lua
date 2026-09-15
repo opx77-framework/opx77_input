@@ -9,7 +9,7 @@ OpxInput.Input = {}
 function OpxInput.Input.Attach() end
 
 --- Whether another surface holds the keyboard (chat's composer, the pause menu, a panel).
---- False while this resource holds it, and false when the reader could not be attached.
+--- False when the reader could not be attached. Asked only while no form is open.
 ---@return boolean
 function OpxInput.Input.Captured() end
 

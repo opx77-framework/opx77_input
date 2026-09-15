@@ -154,8 +154,9 @@ tampons candidats (`input:edit`), elle ne décide de rien.
 
 ## Le clavier
 
-`client/input.lua` tient le clavier : `held` dit si cette resource le tient, pour que le rendre
-ne soit jamais une supposition.
+`client/input.lua` tient le clavier. Il ne garde pas d'état « tenu » : `client/main.lua` le prend
+à l'ouverture d'un formulaire et le rend dans `finish`, qui passe avant toute nouvelle ouverture.
+Le clavier est donc tenu exactement quand un formulaire est ouvert.
 
 - `OpxInput.Input.Attach` résout `Open77.input.isCaptured` une fois, au démarrage.
   `isCaptured` répond `false, "permission_denied:..."` plutôt que de lever ; il est quand même
@@ -164,8 +165,9 @@ ne soit jamais une supposition.
   ce qui tient déjà le clavier.
 - `OpxInput.Runtime.Open` demande `OpxInput.Input.Captured` **avant** de construire le
   formulaire : cette surface va prendre le clavier, et le prendre au composeur du chat taperait
-  la ligne du joueur dans le vide (`keyboard_busy`). Tant que cette resource tient le clavier,
-  la réponse est faux : la surface qui demande est celle qui l'a pris.
+  la ligne du joueur dans le vide (`keyboard_busy`). La question n'est posée que sans formulaire
+  ouvert, donc jamais pendant que cette resource tient le clavier ; un appelant qui remplace son
+  propre formulaire ne la pose pas.
 - `OpxInput.Input.Grab` appelle `page:setFocus(true, false)` : le clavier, pas la souris. Seul un
   `false` explicite est un refus (`no_keyboard`) ; un hôte qui ne répond rien a quand même donné
   le focus, et la réponse non `true` est journalisée.

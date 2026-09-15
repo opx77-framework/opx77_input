@@ -10,11 +10,6 @@ OpxInput.Input = {}
 local isCaptured = nil
 
 --- @author DemiAutomatic
---- @type {boolean}
---- @description Whether this resource currently holds the keyboard.
-local held = false
-
---- @author DemiAutomatic
 --- @type {table<string, string>}
 --- @description Key names the page may report, and the action each means.
 local ACTIONS = {
@@ -49,7 +44,7 @@ end
 --- @description Whether another surface holds the keyboard right now.
 --- @returns {boolean}
 function OpxInput.Input.Captured()
-	if held or isCaptured == nil then return false end
+	if isCaptured == nil then return false end
 	local ok, answer = pcall(isCaptured)
 	return ok and answer == true
 end
@@ -60,12 +55,10 @@ end
 --- @param surface {table|nil}
 --- @returns {boolean, string|nil}
 function OpxInput.Input.Grab(surface)
-	if held then return true end
 	if surface == nil then return false, 'no_surface' end
 	local ok, answer = pcall(surface.setFocus, surface, true, false)
 	if not ok then return false, tostring(answer) end
 	if answer == false then return false, 'refused' end
-	held = true
 	if answer ~= true then return true, tostring(answer) end
 	return true
 end
@@ -75,7 +68,6 @@ end
 --- @description Hands the keyboard back, safe where it was never taken.
 --- @param surface {table|nil}
 function OpxInput.Input.Release(surface)
-	held = false
 	if surface == nil then return end
 	pcall(surface.setFocus, surface, false, false)
 end
