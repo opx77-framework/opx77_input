@@ -220,6 +220,16 @@ arrive pas.
 À l'arrêt de cette resource, le formulaire ouvert répond (`input_stopped`) tant qu'il reste un
 état Lua pour le faire, puis le clavier est rendu.
 
+## Couleurs
+
+La page est dessinée comme la bande d'`opx77_menu` : chaque règle de `web/input.css` qui a une
+jumelle dans `web/menu.css` porte les mêmes valeurs, et les deux se changent ensemble. Aucune
+couleur littérale n'est écrite hors du bloc `:root` en tête de `web/input.css` : l'ombre des
+plaques et les lignes de balayage lisent `--input-shade-rgb`, et le soulignement, le placeholder
+et la piste du curseur du champ focalisé lisent `--input-ink-rgb` (les canaux de `--op77-ink`),
+chacun avec sa propre opacité. `web/open77-ui.css` est le fichier de jetons de la plateforme,
+recopié à l'identique dans chaque resource et jamais modifié.
+
 ## Locales
 
 `shared/locale.lua` publie `OpxInput.Locale` et le raccourci global `locale`. Les lignes de log
