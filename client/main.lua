@@ -345,10 +345,7 @@ local function sweep(atMs)
 	nextOwnerSweepMs = atMs + OWNER_SWEEP_MS
 	local owner = record.owner
 	local running = GetResourceState(owner) == 'running'
-	local generation
-	if type(Open77.resource) == 'table' and type(Open77.resource.generation) == 'function' then
-		generation = Open77.resource.generation(owner)
-	end
+	local generation = Open77.resource.generation(owner)
 	if not running or (generation ~= nil and generation ~= record.generation) then
 		Runtime.Close(record.handle, 'owner_stopped')
 	end
