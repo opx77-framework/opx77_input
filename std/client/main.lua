@@ -5,7 +5,7 @@ OpxInput.Runtime = {}
 --- Cancels the open form, which still answers with `action = "cancel"` and `reason`.
 --- A form must be open: client/exports.lua checks ownership before calling.
 ---@param handle InputHandle|nil nil closes whatever form is open
----@param reason string the cancel reason carried by the answer
+---@param reason InputCancelReason the cancel reason carried by the answer
 ---@return boolean closed
 ---@return string|nil error `not_open` when the handle is not the open form's
 function OpxInput.Runtime.Close(handle, reason) end
@@ -22,7 +22,7 @@ function OpxInput.Runtime.SetStatus(text, ok) end
 ---@param generation integer the invoking resource's generation
 ---@param spec InputSpec
 ---@return InputRecord|nil record
----@return string|nil error input_busy, keyboard_busy, no_keyboard or a spec validation code
+---@return string|nil error player_down (checked first), input_busy, keyboard_busy, no_keyboard or a spec validation code
 function OpxInput.Runtime.Open(owner, generation, spec) end
 
 --- Where the player is in the open form, or `{ open = false }`. Never what they typed.

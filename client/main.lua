@@ -70,6 +70,30 @@ local IDLE_MS = 250
 local GLOBAL_EVENT = 'opx77:input'
 
 --- @author DemiAutomatic
+--- @type {string}
+--- @description The resource that decides whether the player is down.
+local MEDIC = 'opx77_medic'
+
+--- @author DemiAutomatic
+--- @type {boolean}
+--- @description Whether opx77_medic says the player is down, refusing every open.
+local playerDown = false
+
+--- @author DemiAutomatic
+--- @type {integer}
+--- @description Down state events heard, so a late start answer never overrides one.
+local medicHeard = 0
+
+--- @author DemiAutomatic
+--- @method allowedWhileDown
+--- @description Whether an owner's form opens and stays open while down.
+--- @param owner {string}
+--- @returns {boolean}
+local function allowedWhileDown(owner)
+	return type(Config.WHILE_DOWN) == 'table' and Config.WHILE_DOWN[owner] == true
+end
+
+--- @author DemiAutomatic
 --- @type {integer}
 --- @description Last finite clock reading in milliseconds, held across failed reads.
 local lastMs = 0
@@ -221,6 +245,7 @@ end
 function OpxInput.Runtime.Open(owner, generation, spec)
 	noteOwner(owner, generation)
 
+	if playerDown and not allowedWhileDown(owner) then return nil, 'player_down' end
 	if record ~= nil and record.owner ~= owner then return nil, 'input_busy' end
 	if record == nil and Input.Captured() then return nil, 'keyboard_busy' end
 
@@ -374,6 +399,57 @@ AddEventHandler('open77:pauseKey', function()
 end)
 
 --- @author DemiAutomatic
+--- @method setDown
+--- @description Holds the down flag and cancels a form not allowed while down.
+--- @param value {boolean}
+local function setDown(value)
+	playerDown = value
+	if playerDown and record ~= nil and not allowedWhileDown(record.owner) then
+		finish('cancel', 'player_down')
+	end
+end
+
+--- @author DemiAutomatic
+--- @method askMedic
+--- @description Asks opx77_medic whether the player is down, answering the failure.
+--- @returns {table|nil, string|nil}
+local function askMedic()
+	local dispatched, promise, reason = pcall(Open77.exports.call, MEDIC, 'isDown')
+	if not dispatched then return nil, tostring(promise) end
+	if not promise then return nil, tostring(reason or 'not_dispatched') end
+	local result, callError = promise:await()
+	if callError then return nil, tostring(callError) end
+	if type(result) ~= 'table' then return nil, 'malformed_answer' end
+	if result.ok ~= true then return nil, tostring(result.error or 'refused') end
+	return result
+end
+
+--- @author DemiAutomatic
+--- @method adoptMedicState
+--- @description Catches up once with a player who went down before start.
+local function adoptMedicState()
+	if GetResourceState(MEDIC) ~= 'running' then return end
+	local heard = medicHeard
+	local answer, failure = askMedic()
+	if answer == nil then
+		Open77.log.warn(('%s did not say whether the player is down: %s'):format(MEDIC, failure))
+		return
+	end
+	if medicHeard ~= heard then return end
+	setDown(answer.down == true)
+end
+
+--- @author DemiAutomatic
+--- @event opx77:medic:stateChanged
+--- @description Cancels and refuses forms while opx77_medic says the player is down.
+--- @param payload {table}
+AddEventHandler('opx77:medic:stateChanged', function(payload)
+	if type(payload) ~= 'table' then return end
+	medicHeard = medicHeard + 1
+	setDown(payload.down == true)
+end)
+
+--- @author DemiAutomatic
 --- @event onClientResourceStart
 --- @description Attaches the keyboard, creates the surface and starts the form loop.
 --- @param name {string}
@@ -437,6 +513,8 @@ AddEventHandler('onClientResourceStart', function(name)
 			Wait(IDLE_MS)
 		end
 	end)
+
+	CreateThread(adoptMedicState)
 end)
 
 --- @author DemiAutomatic

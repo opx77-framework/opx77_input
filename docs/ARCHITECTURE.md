@@ -35,7 +35,7 @@ L'ordre de chargement est l'ordre du manifeste, et il porte :
   surface tient déjà le clavier, puisqu'il s'apprête à le prendre.
 
 La resource ne déclare pas de `dependency` et n'en a pas besoin : rien ne doit tourner pour
-qu'elle démarre. La directive `version` n'est recopiée dans aucun fichier Lua : un code qui en
+qu'elle démarre, `opx77_medic` compris (voir « Le joueur à terre »). La directive `version` n'est recopiée dans aucun fichier Lua : un code qui en
 aurait besoin la lirait avec `Open77.resource.version()`.
 
 ## Contrats
@@ -56,6 +56,9 @@ README ; elle n'est pas recopiée ici.
   lire.
 - **Un appelant peut remplacer son propre formulaire**, jamais celui d'un autre (`input_busy`).
   Le remplacé répond quand même, annulé avec `reason = "reopened"`.
+- **Pendant que le joueur est à terre**, `open` répond `player_down` avant `input_busy` et
+  `keyboard_busy`, sauf pour un propriétaire de `WHILE_DOWN` (voir « Le joueur à terre »). Les
+  raisons d'annulation sont listées par `InputCancelReason` dans `std/types.lua`.
 
 ### L'appelant est désigné par l'hôte
 
@@ -199,6 +202,31 @@ La touche pause de la plateforme (`open77:pauseKey`) est le filet de secours : l
 Échap et lève cet event à la place, même quand la page ne voit jamais la frappe, ce qui empêche
 une page cassée d'enfermer le joueur. La page rapporte la même touche ; les deux passent par
 `finish`, et la seconde ne trouve plus rien à faire.
+
+## Le joueur à terre
+
+`opx77_medic` tient l'écran du joueur à terre, le clavier et la souris avec lui, et lève l'event
+local `opx77:medic:stateChanged` (`{ down, waiting }`) à chaque changement. Tant que le joueur est
+à terre, aucun formulaire n'est ouvert, et cette resource ne prend donc pas le clavier.
+
+- **`playerDown` refuse `open`** (`player_down`) dans `OpxInput.Runtime.Open`, avant `input_busy`
+  et avant `keyboard_busy` : le focus de l'écran à terre ferait déjà répondre `keyboard_busy`, mais
+  `player_down` dit pourquoi.
+- **`setDown` pose le drapeau avant d'annuler** le formulaire ouvert (`player_down`) par `finish`,
+  qui rend le clavier et cache la page : le handler de la réponse tourne en ligne et peut tenter de
+  rouvrir, et doit alors trouver le refus. Se relever n'ouvre rien : l'appelant redemande.
+- **`WHILE_DOWN`** (`config.lua`, `allowedWhileDown`) nomme les propriétaires dont le formulaire
+  s'ouvre et reste ouvert quand même. L'outil staff y est livré pour que les formulaires de son
+  menu (une raison de kick, une cible de réanimation) marchent encore pour un membre du staff à
+  terre. Une valeur qui n'est pas une table ne laisse passer personne.
+- **Rattraper un démarrage tardif** (`adoptMedicState`) : une resource démarrée après la chute n'a
+  entendu aucun event. Un thread lancé au démarrage demande une fois l'export `isDown`, seulement si
+  `opx77_medic` tourne. `askMedic` vérifie les trois niveaux sans appeler `await` sous `pcall`, la
+  promesse de l'hôte étant un userdata testé par présence ; un échec est journalisé. `medicHeard`
+  compte les events entendus : un event arrivé pendant l'attente est plus récent que la réponse,
+  qui est alors ignorée.
+- **N'importe quelle resource cliente peut lever ce nom d'event** : le handler valide la table et
+  lit `down == true`, et le drapeau ne fait qu'annuler et refuser, jamais ouvrir.
 
 ## L'horloge et la boucle
 
