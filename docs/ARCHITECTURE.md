@@ -198,9 +198,9 @@ appel hôte — puis :
   resource qui n'est plus `running`, ou dont la génération a changé, voit son formulaire annulé
   (`owner_stopped`).
 
-Chaque appel d'une passe est un appel hôte : `guarded` l'exécute sous `pcall`, parce qu'une
-levée terminerait sinon la boucle pour toute la session, et ne journalise que le premier échec
-d'une série.
+Chaque appel d'une passe est un appel hôte : la boucle exécute `frameTick` sous `pcall`, parce
+qu'une levée terminerait sinon la boucle pour toute la session, et ne journalise que le premier
+échec d'une série (`failing`).
 
 ## La surface WebUI
 
@@ -267,6 +267,5 @@ possède (la ligne de touches, les quatre refus) sont traduites.
 - `pattern` est documenté comme devant correspondre à la réponse **entière**, mais
   `matchesPattern` appelle `string.match` sans ancre : un motif non ancré (`%d+`) accepte
   `a1b`. Tous les appelants actuels ancrent leurs motifs.
-- `guarded` n'a qu'un appelant, la boucle du formulaire.
 - La VM serveur charge `shared/text.lua`, `shared/locale.lua` et les deux catalogues sans
   qu'aucun script serveur ne les lise.

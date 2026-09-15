@@ -364,20 +364,6 @@ local function frameTick()
 end
 
 --- @author DemiAutomatic
---- @method guarded
---- @description Runs one loop pass under pcall, logging the first failure only.
---- @param label {string}
---- @param body {fun()}
---- @param failing {boolean}
---- @returns {boolean}
-local function guarded(label, body, failing)
-	local ok, reason = pcall(body)
-	if ok then return false end
-	if not failing then Open77.log.error(('%s failed: %s'):format(label, tostring(reason))) end
-	return true
-end
-
---- @author DemiAutomatic
 --- @event open77:pauseKey
 --- @description Cancels the open form when the platform's pause key is pressed.
 AddEventHandler('open77:pauseKey', function()
@@ -438,12 +424,14 @@ AddEventHandler('onClientResourceStart', function(name)
 	CreateThread(function()
 		local failing = false
 		while page ~= nil do
-			if record == nil then
-				Wait(IDLE_MS)
-			else
-				failing = guarded('the form pass', frameTick, failing)
-				Wait(IDLE_MS)
+			if record ~= nil then
+				local passed, failure = pcall(frameTick)
+				if not passed and not failing then
+					Open77.log.error('the form pass failed: ' .. tostring(failure))
+				end
+				failing = not passed
 			end
+			Wait(IDLE_MS)
 		end
 	end)
 end)
